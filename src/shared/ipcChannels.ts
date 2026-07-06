@@ -36,6 +36,8 @@ export const IpcChannels = {
   tabsGoBack: 'tabs:goBack',
   tabsGoForward: 'tabs:goForward',
   tabsEvent: 'tabs:event',
+  tabsCopyUrl: 'tabs:copyUrl',
+  tabsJsDialog: 'tabs:jsDialog',
 
   themingListThemes: 'theming:listThemes',
   themingApplyThemeToTab: 'theming:applyThemeToTab',
@@ -53,5 +55,8 @@ export const IpcChannels = {
   windowIsFullscreen: 'window:isFullscreen',
   windowFullscreenChanged: 'window:fullscreenChanged',
 
-  protocolImport: 'protocol:import'
+  protocolImport: 'protocol:import',
+
+  updatesCheck: 'updates:check',
+  updatesOpenReleasePage: 'updates:openReleasePage'
 } as const

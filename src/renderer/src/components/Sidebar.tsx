@@ -1,4 +1,5 @@
-import type { BookmarkRecord, FilesystemToolRecord } from '@shared/types'
+import { useState } from 'react'
+import type { BookmarkRecord, FilesystemToolRecord, UpdateCheckResult } from '@shared/types'
 import BookmarkIcon from './BookmarkIcon'
 import {
   ComputerIcon,
@@ -22,6 +23,8 @@ interface SidebarProps {
   onLaunchTool: (tool: FilesystemToolRecord) => void
   onToggleCollapsed: () => void
   onToggleFullscreen: () => void
+  updateInfo: UpdateCheckResult | null
+  onOpenReleasePage: () => void
 }
 
 export default function Sidebar({
@@ -36,8 +39,12 @@ export default function Sidebar({
   onShowSequences,
   onLaunchTool,
   onToggleCollapsed,
-  onToggleFullscreen
+  onToggleFullscreen,
+  updateInfo,
+  onOpenReleasePage
 }: SidebarProps) {
+  const [updateDismissed, setUpdateDismissed] = useState(false)
+
   function itemClass(isActive: boolean): string {
     return isActive ? 'sidebar__item sidebar__item--active' : 'sidebar__item'
   }
@@ -80,6 +87,23 @@ export default function Sidebar({
       ))}
 
       <div className="sidebar__spacer" />
+
+      {updateInfo?.available && !updateDismissed && (
+        <div className="sidebar__update-banner" title={`Update available: v${updateInfo.latestVersion}`}>
+          <button className="sidebar__update-link" onClick={onOpenReleasePage}>
+            {collapsed ? '⇧' : `Update available: v${updateInfo.latestVersion}`}
+          </button>
+          {!collapsed && (
+            <button
+              className="sidebar__update-dismiss"
+              onClick={() => setUpdateDismissed(true)}
+              title="Dismiss"
+            >
+              &times;
+            </button>
+          )}
+        </div>
+      )}
 
       <button className="sidebar__item" onClick={onToggleCollapsed} title={collapsed ? 'Expand' : 'Collapse'}>
         {collapsed ? <ChevronExpandIcon /> : <ChevronCollapseIcon />}

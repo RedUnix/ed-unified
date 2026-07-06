@@ -5,8 +5,9 @@ import TabView from './components/TabView'
 import LibraryGrid from './components/LibraryGrid'
 import SequencesPanel from './components/SequencesPanel'
 import ThemePickerPanel from './components/ThemePickerPanel'
+import UpdateToast from './components/UpdateToast'
 import { LibraryContext, useLibraryProvider, useLibrary } from './state/libraryStore'
-import type { AutoDarkSettings, FilesystemToolRecord } from '@shared/types'
+import type { AutoDarkSettings, FilesystemToolRecord, UpdateCheckResult } from '@shared/types'
 
 interface OpenTab {
   id: string
@@ -28,12 +29,32 @@ function AppShell() {
   const [themePanelOpen, setThemePanelOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null)
+  const [updateToastDismissed, setUpdateToastDismissed] = useState(false)
 
   useEffect(() => {
     void window.edToolApp.window.isFullscreen().then(setIsFullscreen)
     const unsubscribe = window.edToolApp.onFullscreenChange(setIsFullscreen)
     return unsubscribe
   }, [])
+
+  useEffect(() => {
+    void window.edToolApp.updates.check().then(setUpdateInfo)
+  }, [])
+
+  const openReleasePage = useCallback(() => {
+    if (updateInfo) void window.edToolApp.updates.openReleasePage(updateInfo.releaseUrl)
+  }, [updateInfo])
+
+  const showUpdateToast = section === 'library' && (updateInfo?.available ?? false) && !updateToastDismissed
+
+  // Auto-dismisses so the toast doesn't reappear every time the user revisits the library
+  // (e.g. after closing a tab) -- the sidebar entry stays available as a persistent reminder.
+  useEffect(() => {
+    if (!showUpdateToast) return undefined
+    const timer = setTimeout(() => setUpdateToastDismissed(true), 10000)
+    return () => clearTimeout(timer)
+  }, [showUpdateToast])
 
   useEffect(() => {
     const unsubscribe = window.edToolApp.onTabEvent((event) => {
@@ -166,6 +187,13 @@ function AppShell() {
 
   return (
     <div className="app-shell">
+      {showUpdateToast && updateInfo && (
+        <UpdateToast
+          updateInfo={updateInfo}
+          onOpenReleasePage={openReleasePage}
+          onDismiss={() => setUpdateToastDismissed(true)}
+        />
+      )}
       <Sidebar
         bookmarks={library.bookmarks}
         tools={library.tools}
@@ -179,6 +207,8 @@ function AppShell() {
         onLaunchTool={handleToolAction}
         onToggleCollapsed={toggleSidebarCollapsed}
         onToggleFullscreen={toggleFullscreen}
+        updateInfo={updateInfo}
+        onOpenReleasePage={openReleasePage}
       />
       <div className="main-area">
         <TabStrip

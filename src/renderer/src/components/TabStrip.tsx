@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import TabNavControls from './TabNavControls'
 
 interface TabDescriptor {
@@ -32,7 +33,26 @@ export default function TabStrip({
   onGoForward,
   onToggleThemePanel
 }: TabStripProps) {
+  const [copiedBubble, setCopiedBubble] = useState<{
+    key: number
+    left: number
+    top: number
+  } | null>(null)
+  const copiedTimeoutRef = useRef<number | null>(null)
+
   if (tabs.length === 0) return null
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLButtonElement>, tabId: string): void => {
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    void window.edToolApp.tabs.copyUrl(tabId).then((url) => {
+      if (!url) return
+      if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current)
+      setCopiedBubble({ key: Date.now(), left: rect.left + rect.width / 2, top: rect.top })
+      copiedTimeoutRef.current = window.setTimeout(() => setCopiedBubble(null), 1200)
+    })
+  }
+
   return (
     <div className="tab-strip">
       <TabNavControls
@@ -50,6 +70,7 @@ export default function TabStrip({
               : 'tab-strip__tab'
           }
           onClick={() => onFocus(tab.id)}
+          onContextMenu={(e) => handleContextMenu(e, tab.id)}
         >
           <span>{tab.label}</span>
           <span
@@ -76,6 +97,15 @@ export default function TabStrip({
         >
           &#9681;
         </button>
+      )}
+      {copiedBubble && (
+        <span
+          key={copiedBubble.key}
+          className="tab-strip__copied-bubble"
+          style={{ left: copiedBubble.left, top: copiedBubble.top }}
+        >
+          Copied!
+        </span>
       )}
     </div>
   )

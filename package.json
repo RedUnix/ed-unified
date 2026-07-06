@@ -1,6 +1,6 @@
 {
   "name": "ed-unified-app",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Unified browser, bookmark manager, and launcher for Elite: Dangerous 3rd-party tools",
   "main": "./out/main/index.js",
   "author": "Jordan Cunningham",

@@ -9,6 +9,7 @@ import { registerThemingIpc } from './themingIpc'
 import { registerSettingsIpc } from './settingsIpc'
 import { registerWindowIpc } from './windowIpc'
 import { registerLibraryIpc } from './libraryIpc'
+import { registerUpdatesIpc } from './updatesIpc'
 
 export function registerIpc(window: BrowserWindow, tabsManager: WebContentsViewManager): void {
   registerBookmarksIpc()
@@ -20,4 +21,5 @@ export function registerIpc(window: BrowserWindow, tabsManager: WebContentsViewM
   registerSettingsIpc()
   registerWindowIpc(window)
   registerLibraryIpc()
+  registerUpdatesIpc()
 }

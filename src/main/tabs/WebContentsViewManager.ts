@@ -1,5 +1,7 @@
 import { randomUUID } from 'crypto'
-import { BrowserWindow, WebContentsView, session } from 'electron'
+import { join } from 'path'
+import { BrowserWindow, WebContentsView, dialog, ipcMain, session } from 'electron'
+import { IpcChannels } from '@shared/ipcChannels'
 import type { AutoDarkSettings, BookmarkRecord, TabBounds, TabEvent } from '@shared/types'
 import { applyThemeToWebContents } from '../theming/cssInjector'
 import { buildAutoDarkScript } from '../theming/autoDarkEngine'
@@ -8,8 +10,28 @@ import { getSettings } from '../data/settingsStore'
 import { registerDevToolsToggle } from '../devtools'
 import { buildEdcodexPageScript } from '../edcodex/edcodexPageScript'
 import { PROTOCOL_SCHEME } from '../protocol/protocolHandler'
+import { showNativePrompt } from '../platform'
 
 const EDCODEX_PAGE_SCRIPT = buildEdcodexPageScript()
+const TAB_PRELOAD_PATH = join(__dirname, '../preload/tab.js')
+
+// Reassigns alert/confirm in the page's own main-world context (unlike a
+// preload script, `executeJavaScript` from the main process runs here, so
+// the override is actually visible to the page). Routes through the bridge
+// tabPreload.ts exposes. Safe to re-run on every navigation.
+const JS_DIALOG_OVERRIDE_SCRIPT = `(() => {
+  const bridge = window.__edToolJsDialogBridge
+  if (!bridge) return
+  window.alert = (message) => bridge.alert(String(message ?? ''))
+  window.confirm = (message) => bridge.confirm(String(message ?? ''))
+  window.prompt = (message, defaultValue) => bridge.prompt(String(message ?? ''), String(defaultValue ?? ''))
+})()`
+
+interface TabJsDialogRequest {
+  kind: 'alert' | 'confirm' | 'prompt'
+  message: string
+  defaultValue?: string
+}
 
 interface ManagedTab {
   view: WebContentsView
@@ -26,7 +48,29 @@ export class WebContentsViewManager {
     private readonly window: BrowserWindow,
     private readonly onEvent: (event: TabEvent) => void,
     private readonly onProtocolUrl: (url: string) => void
-  ) {}
+  ) {
+    ipcMain.on(IpcChannels.tabsJsDialog, (event, request: TabJsDialogRequest) => {
+      if (request.kind === 'confirm') {
+        const result = dialog.showMessageBoxSync(this.window, {
+          type: 'question',
+          buttons: ['OK', 'Cancel'],
+          defaultId: 0,
+          cancelId: 1,
+          message: request.message
+        })
+        event.returnValue = result === 0
+      } else if (request.kind === 'prompt') {
+        event.returnValue = showNativePrompt(request.message, request.defaultValue ?? '')
+      } else {
+        dialog.showMessageBoxSync(this.window, {
+          type: 'info',
+          buttons: ['OK'],
+          message: request.message
+        })
+        event.returnValue = undefined
+      }
+    })
+  }
 
   async open(bookmark: BookmarkRecord): Promise<void> {
     let tab = this.tabs.get(bookmark.id)
@@ -69,12 +113,17 @@ export class WebContentsViewManager {
         session: viewSession,
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: true
+        sandbox: true,
+        preload: TAB_PRELOAD_PATH
       }
     })
     this.window.contentView.addChildView(view)
     registerDevToolsToggle(view.webContents)
     return view
+  }
+
+  getUrl(tabId: string): string | null {
+    return this.tabs.get(tabId)?.view.webContents.getURL() ?? null
   }
 
   focus(tabId: string): void {
@@ -151,6 +200,7 @@ export class WebContentsViewManager {
   private wireEvents(view: WebContentsView, tabId: string): void {
     const wc = view.webContents
     wc.on('did-start-loading', () => this.onEvent({ type: 'loading', tabId }))
+    wc.on('dom-ready', () => void wc.executeJavaScript(JS_DIALOG_OVERRIDE_SCRIPT))
     wc.on('did-finish-load', () => {
       this.onEvent({ type: 'did-finish-load', tabId })
       const autoDark = this.autoDarkSettings.get(tabId)

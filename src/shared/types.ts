@@ -159,6 +159,13 @@ export interface AppSettings {
   themeColors?: ThemeColors
 }
 
+export interface UpdateCheckResult {
+  available: boolean
+  currentVersion: string
+  latestVersion: string
+  releaseUrl: string
+}
+
 export interface ProtocolImportPayload {
   name: string
   url: string

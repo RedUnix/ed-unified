@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { clipboard, ipcMain } from 'electron'
 import { IpcChannels } from '@shared/ipcChannels'
 import type { TabBounds } from '@shared/types'
 import type { WebContentsViewManager } from '../tabs/WebContentsViewManager'
@@ -28,5 +28,10 @@ export function registerTabsIpc(tabsManager: WebContentsViewManager): void {
   })
   ipcMain.handle(IpcChannels.tabsGoForward, (_e, tabId: string) => {
     tabsManager.goForward(tabId)
+  })
+  ipcMain.handle(IpcChannels.tabsCopyUrl, (_e, tabId: string) => {
+    const url = tabsManager.getUrl(tabId)
+    if (url) clipboard.writeText(url)
+    return url
   })
 }

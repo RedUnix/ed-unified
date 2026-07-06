@@ -14,7 +14,8 @@ import type {
   TabBounds,
   TabEvent,
   ThemeColors,
-  ThemeRecord
+  ThemeRecord,
+  UpdateCheckResult
 } from '@shared/types'
 
 const api = {
@@ -69,7 +70,9 @@ const api = {
     setBounds: (bounds: TabBounds): Promise<void> =>
       ipcRenderer.invoke(IpcChannels.tabsSetBounds, bounds),
     goBack: (tabId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsGoBack, tabId),
-    goForward: (tabId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsGoForward, tabId)
+    goForward: (tabId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsGoForward, tabId),
+    copyUrl: (tabId: string): Promise<string | null> =>
+      ipcRenderer.invoke(IpcChannels.tabsCopyUrl, tabId)
   },
   theming: {
     listThemes: (): Promise<ThemeRecord[]> => ipcRenderer.invoke(IpcChannels.themingListThemes),
@@ -100,6 +103,11 @@ const api = {
   library: {
     reorder: (orderedIds: string[]): Promise<void> =>
       ipcRenderer.invoke(IpcChannels.libraryReorder, orderedIds)
+  },
+  updates: {
+    check: (): Promise<UpdateCheckResult> => ipcRenderer.invoke(IpcChannels.updatesCheck),
+    openReleasePage: (url: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.updatesOpenReleasePage, url)
   },
   onTabEvent: (cb: (evt: TabEvent) => void): (() => void) => {
     const listener = (_e: unknown, evt: TabEvent): void => cb(evt)

@@ -129,6 +129,98 @@ textarea {
   padding: 12px 8px 4px;
 }
 
+.sidebar__update-banner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+}
+
+.sidebar__update-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  color: var(--accent-strong);
+  text-align: left;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar__update-link:hover {
+  color: var(--text-primary);
+}
+
+.sidebar__update-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  padding: 2px 8px 2px 0;
+  flex-shrink: 0;
+}
+
+.sidebar__update-dismiss:hover {
+  color: var(--text-primary);
+}
+
+.update-toast {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: update-toast-in 0.25s ease;
+}
+
+.update-toast__text {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.update-toast__close {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  padding: 0 2px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.update-toast__close:hover {
+  color: var(--text-primary);
+}
+
+@keyframes update-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ---- Main area ---- */
 
 .main-area {
@@ -221,6 +313,40 @@ textarea {
   border-color: var(--accent);
   color: var(--accent-strong);
   background: var(--accent-dim);
+}
+
+.tab-strip__copied-bubble {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  background: var(--accent);
+  color: var(--bg-app);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 100;
+  animation: tab-strip-copied-float 1.2s ease-out forwards;
+}
+
+@keyframes tab-strip-copied-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -90%);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -115%);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, -135%);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -155%);
+  }
 }
 
 .content-area {

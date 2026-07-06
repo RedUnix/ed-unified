@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { AppSettings, ThemeColors } from '@shared/types'
+import type { AppSettings, ThemeColors, UpdateCheckResult } from '@shared/types'
 import { applyThemeColors } from '../utils/applyThemeColors'
 
 interface AppSettingsControlProps {
@@ -18,6 +18,8 @@ export default function AppSettingsControl({ settings, onSettingsChange }: AppSe
   const [open, setOpen] = useState(false)
   const opacityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const colorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [updateCheck, setUpdateCheck] = useState<UpdateCheckResult | null>(null)
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
 
   const colors = { ...DEFAULT_COLORS, ...settings?.themeColors }
 
@@ -58,6 +60,13 @@ export default function AppSettingsControl({ settings, onSettingsChange }: AppSe
     applyThemeColors(null)
     const updated = await window.edToolApp.settings.setThemeColors(null)
     onSettingsChange(updated)
+  }
+
+  async function handleCheckForUpdates(): Promise<void> {
+    setCheckingUpdate(true)
+    const result = await window.edToolApp.updates.check()
+    setUpdateCheck(result)
+    setCheckingUpdate(false)
   }
 
   return (
@@ -141,6 +150,36 @@ export default function AppSettingsControl({ settings, onSettingsChange }: AppSe
               <button type="button" className="btn" onClick={() => void handleResetColors()}>
                 Reset Colors to Default
               </button>
+            </div>
+
+            <div className="field">
+              <label>Updates</label>
+              <button
+                type="button"
+                className="btn"
+                disabled={checkingUpdate}
+                onClick={() => void handleCheckForUpdates()}
+              >
+                {checkingUpdate ? 'Checking...' : 'Check for Updates'}
+              </button>
+              {updateCheck && (
+                <span style={{ marginTop: 6 }}>
+                  {updateCheck.available ? (
+                    <>
+                      Update available: v{updateCheck.latestVersion}{' '}
+                      <button
+                        type="button"
+                        className="btn btn--accent"
+                        onClick={() => void window.edToolApp.updates.openReleasePage(updateCheck.releaseUrl)}
+                      >
+                        View Release
+                      </button>
+                    </>
+                  ) : (
+                    `You're up to date (v${updateCheck.currentVersion}).`
+                  )}
+                </span>
+              )}
             </div>
 
             <div className="modal__actions">
