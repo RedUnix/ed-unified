@@ -19,7 +19,10 @@ Browse and bookmark EDCodex tools, launch filesystem programs, chain everything 
 
 ## Screenshots
 
-### Library
+### A customized setup -- custom theme colors, background image, and icons
+![Customized library](Screenshots/custom.png)
+
+### Library (default look)
 ![Library](Screenshots/Library.png)
 
 ### Import from EDCodex
