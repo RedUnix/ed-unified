@@ -141,7 +141,10 @@ export type TabEvent =
   | { type: 'title-updated'; tabId: string; title: string }
   | { type: 'load-failed'; tabId: string; errorDescription: string }
   | { type: 'new-tab'; tabId: string; url: string }
-  | { type: 'nav-state'; tabId: string; canGoBack: boolean; canGoForward: boolean }
+  | { type: 'nav-state'; tabId: string; canGoBack: boolean; canGoForward: boolean; url: string }
+  | { type: 'find-requested'; tabId: string }
+  | { type: 'find-escape'; tabId: string }
+  | { type: 'found-in-page'; tabId: string; activeMatchOrdinal: number; matches: number }
 
 export interface ThemeColors {
   accent: string

@@ -11,6 +11,11 @@ export function registerTabsIpc(tabsManager: WebContentsViewManager): void {
     if (!bookmark) throw new Error(`Bookmark not found: ${bookmarkId}`)
     await tabsManager.open(bookmark)
   })
+  ipcMain.handle(IpcChannels.tabsOpenUrl, async (_e, tabId: string, url: string) => {
+    // Load failures are reported through the tabs:event channel ('load-failed');
+    // don't let the rejected loadURL promise bubble back as an IPC error too.
+    await tabsManager.openUrlInTab(tabId, url).catch(() => {})
+  })
   ipcMain.handle(IpcChannels.tabsClose, (_e, bookmarkId: string) => {
     tabsManager.close(bookmarkId)
   })
@@ -33,5 +38,14 @@ export function registerTabsIpc(tabsManager: WebContentsViewManager): void {
     const url = tabsManager.getUrl(tabId)
     if (url) clipboard.writeText(url)
     return url
+  })
+  ipcMain.handle(
+    IpcChannels.tabsFindInPage,
+    (_e, tabId: string, text: string, forward: boolean, findNext: boolean) => {
+      tabsManager.findInPage(tabId, text, forward, findNext)
+    }
+  )
+  ipcMain.handle(IpcChannels.tabsStopFindInPage, (_e, tabId: string) => {
+    tabsManager.stopFindInPage(tabId)
   })
 }

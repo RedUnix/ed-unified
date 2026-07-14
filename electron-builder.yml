@@ -29,3 +29,9 @@ mac:
 linux:
   target: AppImage
   category: Utility
+  executableName: ed-unified-app
+  artifactName: ${productName}-${version}.${ext}
+  synopsis: Unified browser and launcher for Elite Dangerous third-party tools
+  # Keeps the .desktop entry's WM_CLASS in sync so desktop environments
+  # associate running windows with the launcher entry.
+  syncDesktopName: true

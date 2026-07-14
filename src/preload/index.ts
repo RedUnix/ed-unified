@@ -64,6 +64,8 @@ const api = {
   },
   tabs: {
     open: (bookmarkId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsOpen, bookmarkId),
+    openUrl: (tabId: string, url: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.tabsOpenUrl, tabId, url),
     close: (tabId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsClose, tabId),
     focus: (tabId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsFocus, tabId),
     hideAll: (): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsHideAll),
@@ -72,7 +74,11 @@ const api = {
     goBack: (tabId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsGoBack, tabId),
     goForward: (tabId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsGoForward, tabId),
     copyUrl: (tabId: string): Promise<string | null> =>
-      ipcRenderer.invoke(IpcChannels.tabsCopyUrl, tabId)
+      ipcRenderer.invoke(IpcChannels.tabsCopyUrl, tabId),
+    findInPage: (tabId: string, text: string, forward: boolean, findNext: boolean): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.tabsFindInPage, tabId, text, forward, findNext),
+    stopFindInPage: (tabId: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.tabsStopFindInPage, tabId)
   },
   theming: {
     listThemes: (): Promise<ThemeRecord[]> => ipcRenderer.invoke(IpcChannels.themingListThemes),

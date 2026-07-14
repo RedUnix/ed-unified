@@ -1,10 +1,11 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, type BrowserWindow } from 'electron'
 import { IpcChannels } from '@shared/ipcChannels'
 import type { FilesystemToolRecord, NewToolInput } from '@shared/types'
 import * as repo from '../data/libraryRepository'
 import { launchPath } from '../platform'
+import { showLaunchOverlay } from '../bootWindow'
 
-export function registerToolsIpc(): void {
+export function registerToolsIpc(window: BrowserWindow): void {
   ipcMain.handle(IpcChannels.toolsList, () => repo.listTools())
   ipcMain.handle(IpcChannels.toolsCreate, (_e, input: NewToolInput) => repo.createTool(input))
   ipcMain.handle(
@@ -16,7 +17,11 @@ export function registerToolsIpc(): void {
   ipcMain.handle(IpcChannels.toolsPickInstalledExe, async () => {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
-      filters: [{ name: 'Executables', extensions: ['exe'] }]
+      // Linux/macOS executables usually have no extension, so only Windows filters.
+      filters:
+        process.platform === 'win32'
+          ? [{ name: 'Executables', extensions: ['exe'] }]
+          : [{ name: 'All Files', extensions: ['*'] }]
     })
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
@@ -35,6 +40,7 @@ export function registerToolsIpc(): void {
     const tools = await repo.listTools()
     const tool = tools.find((t) => t.id === id)
     if (!tool?.installedExePath) throw new Error('No installed program path set for this tool.')
+    showLaunchOverlay(window, tool.name)
     launchPath(tool.installedExePath)
   })
 }

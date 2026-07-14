@@ -1,9 +1,28 @@
 import { app } from 'electron'
 import { randomUUID } from 'crypto'
 import { join } from 'path'
-import type { LibraryDb } from '@shared/types'
+import type { BookmarkRecord, LibraryDb } from '@shared/types'
 
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2
+
+/** Default ED.Tools bookmark; also backfilled into pre-v2 libraries (see getDb). */
+function buildEdToolsBookmark(order: number): BookmarkRecord {
+  const now = new Date().toISOString()
+  return {
+    id: randomUUID(),
+    kind: 'website',
+    name: 'ED Tools',
+    url: 'https://ed.tools/',
+    description:
+      'A curated directory of Elite: Dangerous third-party tools, searchable and organized by activity.',
+    categoryIds: [],
+    sessionPartition: `persist:bm-${randomUUID()}`,
+    source: { type: 'manual' },
+    order,
+    createdAt: now,
+    updatedAt: now
+  }
+}
 
 /** Categories and the EDCodex bookmark shipped by default on a brand-new install. */
 function seedLibraryData(): LibraryDb {
@@ -27,7 +46,8 @@ function seedLibraryData(): LibraryDb {
         createdAt: now,
         updatedAt: now,
         autoDark: { enabled: true, brightness: 1, contrast: 1.4, sepia: 0 }
-      }
+      },
+      buildEdToolsBookmark(1)
     ],
     tools: [],
     categories: [
@@ -85,6 +105,20 @@ export function getDb(): Promise<import('lowdb').Low<LibraryDb>> {
             needsWrite = true
           }
           nextOrder = Math.max(nextOrder, tool.order + 1)
+        }
+        // v2: ED.Tools became a default library entry; add it once to existing
+        // installs (skipped if the user already bookmarked it themselves).
+        if ((db.data.schemaVersion ?? 1) < 2) {
+          const hasEdTools = db.data.bookmarks.some((b) => {
+            try {
+              return new URL(b.url).hostname.replace(/^www\./, '') === 'ed.tools'
+            } catch {
+              return false
+            }
+          })
+          if (!hasEdTools) db.data.bookmarks.push(buildEdToolsBookmark(nextOrder))
+          db.data.schemaVersion = 2
+          needsWrite = true
         }
         if (needsWrite) await db.write()
       }

@@ -29,6 +29,7 @@ export const IpcChannels = {
   sequencesRevealBat: 'sequences:revealBat',
 
   tabsOpen: 'tabs:open',
+  tabsOpenUrl: 'tabs:openUrl',
   tabsClose: 'tabs:close',
   tabsFocus: 'tabs:focus',
   tabsHideAll: 'tabs:hideAll',
@@ -38,6 +39,8 @@ export const IpcChannels = {
   tabsEvent: 'tabs:event',
   tabsCopyUrl: 'tabs:copyUrl',
   tabsJsDialog: 'tabs:jsDialog',
+  tabsFindInPage: 'tabs:findInPage',
+  tabsStopFindInPage: 'tabs:stopFindInPage',
 
   themingListThemes: 'theming:listThemes',
   themingApplyThemeToTab: 'theming:applyThemeToTab',

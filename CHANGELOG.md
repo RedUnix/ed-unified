@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.3.0
+
+### Added
+
+- **Find in page (Ctrl+F)** for website tabs: a find bar with match counts and previous/next navigation. Works whether keyboard focus is in the app shell or inside the embedded site (Escape closes it from either side).
+- **New tab with URL bar**: a "+" button in the tab strip opens a blank tab with an address bar at the top. Type a URL (or a search query) to browse anywhere; the blank tab uses your library background image and opacity as its default page. Tabs opened from links inside embedded sites now get the URL bar too.
+- **Launch overlay**: launching a filesystem tool now shows a small boot-screen-styled "Launching <tool name>" overlay that fades out on its own.
+- **[ED Tools](https://ed.tools/)** is now part of the default library. Existing installs get it added once automatically (skipped if you already bookmarked it).
+- **Linux support**: an AppImage build (`npm run build:linux`), with tool launching wired up for Linux paths and protocol URLs. Launch-sequence `.bat` generation remains Windows-only.
+
 ## v0.2.0
 
 ### Fixed

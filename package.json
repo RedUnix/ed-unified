@@ -1,6 +1,6 @@
 {
   "name": "ed-unified-app",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Unified browser, bookmark manager, and launcher for Elite: Dangerous 3rd-party tools",
   "main": "./out/main/index.js",
   "author": "Jordan Cunningham",
@@ -11,7 +11,8 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "build:win": "electron-vite build && electron-builder --win"
+    "build:win": "electron-vite build && electron-builder --win",
+    "build:linux": "electron-vite build && electron-builder --linux"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "^2.18.1",

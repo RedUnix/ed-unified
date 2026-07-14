@@ -13,7 +13,7 @@ import { registerUpdatesIpc } from './updatesIpc'
 
 export function registerIpc(window: BrowserWindow, tabsManager: WebContentsViewManager): void {
   registerBookmarksIpc()
-  registerToolsIpc()
+  registerToolsIpc(window)
   registerCategoriesIpc()
   registerSequencesIpc()
   registerTabsIpc(tabsManager)

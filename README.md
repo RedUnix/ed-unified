@@ -1,15 +1,16 @@
 # ED Unified
 
-A Windows-first desktop app that unifies browsing, bookmarking, installing, and launching Elite: Dangerous third-party tools -- so you never need to leave it for your regular web browser.
+A desktop app for Windows and Linux that unifies browsing, bookmarking, installing, and launching Elite: Dangerous third-party tools -- so you never need to leave it for your regular web browser.
 
 Browse and bookmark EDCodex tools, launch filesystem programs, chain everything (game + companion apps) into one launch sequence, and theme every embedded site with an Elite Dangerous-inspired HUD look, all from a single app.
 
 ## Features
 
-- **Unified library** -- bookmarks and filesystem tools live side by side in one grid, drag-and-drop to reorder, organized by category.
-- **In-app browsing** -- embedded sites open as tabs inside the app (with back/forward navigation), never in your OS browser.
+- **Unified library** -- bookmarks and filesystem tools live side by side in one grid, drag-and-drop to reorder, organized by category. [EDCodex](http://edcodex.info/) and [ED Tools](https://ed.tools/) come pre-bookmarked.
+- **In-app browsing** -- embedded sites open as tabs inside the app (with back/forward navigation), never in your OS browser. Open a blank tab with the "+" button and browse anywhere from its URL bar; blank tabs use your library background as their default page.
+- **Find in page** -- Ctrl+F opens a find bar on any website tab, with match counts and previous/next navigation.
 - **One-click EDCodex import** -- paste an EDCodex tool URL, or click "Add to ED Unified" directly on an EDCodex tool page while browsing it inside the app, and the name, description, categories, and icon all come across automatically.
-- **Launch sequences** -- chain a game launch (Steam/Epic/direct) with companion tools and custom delays, then generate a `.bat` file or run it straight from the app.
+- **Launch sequences** -- chain a game launch (Steam/Epic/direct) with companion tools and custom delays, then generate a `.bat` file or run it straight from the app (`.bat` generation is Windows-only).
 - **Auto dark theming** -- per-site brightness/contrast/sepia controls with a smart auto-invert for bright pages, plus legacy one-click presets.
 - **Custom library background** -- set your own background image with adjustable opacity behind the library grid.
 - **Built-in ad/tracker blocking** for embedded tabs.
@@ -45,7 +46,10 @@ Browse and bookmark EDCodex tools, launch filesystem programs, chain everything 
 
 ### Download
 
-Grab the latest Windows installer from the [Releases](../../releases) page.
+Grab the latest release from the [Releases](../../releases) page:
+
+- **Windows** -- `ED Unified-<version>-setup.exe` installer
+- **Linux** -- `ED Unified-<version>.AppImage` (mark it executable, then run it)
 
 ### Build from source
 
@@ -53,9 +57,12 @@ Requires [Node.js](https://nodejs.org) 20+.
 
 ```sh
 npm install
-npm run dev          # run in development
-npm run build:win    # build the Windows installer (release/)
+npm run dev            # run in development
+npm run build:win      # build the Windows installer (release/)
+npm run build:linux    # build the Linux AppImage (release/)
 ```
+
+> Note: `build:linux` must run on Linux (AppImage assembly creates symlinks, which Windows blocks without elevation or Developer Mode). Pushing a `v*` tag builds both installers via GitHub Actions and attaches them to a draft release.
 
 ## Tech Stack
 

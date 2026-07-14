@@ -107,6 +107,37 @@ export class WebContentsViewManager {
     return tabId
   }
 
+  /**
+   * Loads a URL into a renderer-created tab (the URL-bar "new tab" flow). The
+   * renderer owns the tab id; the native view is created lazily on the first
+   * navigation and reused for subsequent URL-bar submissions.
+   */
+  async openUrlInTab(tabId: string, url: string): Promise<void> {
+    let tab = this.tabs.get(tabId)
+    if (!tab) {
+      const viewSession = session.fromPartition(`ephemeral-${tabId}`)
+      if (getSettings().adblockEnabled) await enableAdblockForSession(viewSession)
+      const view = this.createView(viewSession)
+      this.wireEvents(view, tabId)
+      tab = { view, tabId }
+      this.tabs.set(tabId, tab)
+    }
+    this.focus(tabId)
+    await tab.view.webContents.loadURL(url)
+  }
+
+  findInPage(tabId: string, text: string, forward: boolean, findNext: boolean): void {
+    const wc = this.tabs.get(tabId)?.view.webContents
+    if (!wc || !text) return
+    wc.findInPage(text, { forward, findNext })
+  }
+
+  stopFindInPage(tabId: string): void {
+    const wc = this.tabs.get(tabId)?.view.webContents
+    if (!wc) return
+    wc.stopFindInPage('clearSelection')
+  }
+
   private createView(viewSession: Electron.Session): WebContentsView {
     const view = new WebContentsView({
       webPreferences: {
@@ -221,11 +252,33 @@ export class WebContentsViewManager {
         type: 'nav-state',
         tabId,
         canGoBack: index > 0,
-        canGoForward: index < nav.getAllEntries().length - 1
+        canGoForward: index < nav.getAllEntries().length - 1,
+        url: wc.getURL()
       })
     }
     wc.on('did-navigate', emitNavState)
     wc.on('did-navigate-in-page', emitNavState)
+    // Keyboard focus normally lives inside the embedded page, so the renderer
+    // shell never sees Ctrl+F -- intercept it here and let the renderer open
+    // its find bar. Escape is forwarded (without swallowing it) so an open
+    // find bar can close even while the page has focus.
+    wc.on('before-input-event', (event, input) => {
+      if (input.type !== 'keyDown') return
+      if ((input.control || input.meta) && input.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        this.onEvent({ type: 'find-requested', tabId })
+      } else if (input.key === 'Escape') {
+        this.onEvent({ type: 'find-escape', tabId })
+      }
+    })
+    wc.on('found-in-page', (_e, result) => {
+      this.onEvent({
+        type: 'found-in-page',
+        tabId,
+        activeMatchOrdinal: result.activeMatchOrdinal,
+        matches: result.matches
+      })
+    })
     // The "Add to ED Unified" link injected by edcodexPageScript.ts navigates
     // to an edtoolapp:// URL -- intercept that here and resolve it entirely
     // in-app (same parsing/creation path as the OS-level protocol handoff),

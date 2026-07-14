@@ -84,3 +84,25 @@ body,
   color: var(--text-faint);
   text-transform: uppercase;
 }
+
+/* ---- Tool-launch overlay variant ---- */
+
+.boot-screen--launch .boot-screen__frame {
+  gap: 8px;
+}
+
+.boot-screen--launch .boot-screen__wordmark {
+  font-size: 22px;
+  letter-spacing: 0.12em;
+}
+
+.boot-screen__launch-name {
+  max-width: 90%;
+}
+
+/* The wordmark is a flex row, so the ellipsis has to live on the inner span. */
+.boot-screen__launch-name .boot-screen__word {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

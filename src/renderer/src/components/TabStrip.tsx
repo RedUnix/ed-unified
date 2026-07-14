@@ -15,6 +15,7 @@ interface TabStripProps {
   themePanelOpen: boolean
   onFocus: (id: string) => void
   onClose: (id: string) => void
+  onNewTab: () => void
   onGoBack: () => void
   onGoForward: () => void
   onToggleThemePanel: () => void
@@ -29,6 +30,7 @@ export default function TabStrip({
   themePanelOpen,
   onFocus,
   onClose,
+  onNewTab,
   onGoBack,
   onGoForward,
   onToggleThemePanel
@@ -39,8 +41,6 @@ export default function TabStrip({
     top: number
   } | null>(null)
   const copiedTimeoutRef = useRef<number | null>(null)
-
-  if (tabs.length === 0) return null
 
   const handleContextMenu = (e: React.MouseEvent<HTMLButtonElement>, tabId: string): void => {
     e.preventDefault()
@@ -85,6 +85,13 @@ export default function TabStrip({
           </span>
         </button>
       ))}
+      <button
+        className="tab-nav-controls__btn tab-strip__new-tab"
+        onClick={onNewTab}
+        title="New tab"
+      >
+        +
+      </button>
       {showingTab && (
         <button
           className={
