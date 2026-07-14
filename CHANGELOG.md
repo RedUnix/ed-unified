@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.1
+
+### Added
+
+- **Library filters**: filter the grid by item type (All / Bookmarks / Tools) and by category. Drag-and-drop reordering still works while filtered.
+- **Edit filesystem tools**: tool cards now have an Edit button opening the same form as Add Tool (name, description, category, program path, icon), with Delete moved into the edit dialog to match bookmarks.
+- **Local file icons for bookmarks**: the bookmark form now accepts either an icon URL or a local image file (local file wins if both are set).
+
+### Fixed
+
+- The ED Tools bookmark now ships with a bundled icon -- ed.tools blocks the favicon fetch the app fell back to, leaving the entry iconless. Existing installs get the icon attached automatically (unless you already set one).
+- The Add Bookmark button now matches the styling of the other library toolbar buttons.
+
 ## v0.3.0
 
 ### Added

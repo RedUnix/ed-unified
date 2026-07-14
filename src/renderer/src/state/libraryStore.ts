@@ -21,6 +21,7 @@ interface LibraryState {
   addBookmark: (input: NewBookmarkInput) => Promise<BookmarkRecord>
   updateBookmark: (id: string, patch: Partial<BookmarkRecord>) => Promise<BookmarkRecord>
   addTool: (input: NewToolInput) => Promise<FilesystemToolRecord>
+  updateTool: (id: string, patch: Partial<FilesystemToolRecord>) => Promise<FilesystemToolRecord>
   deleteBookmark: (id: string) => Promise<void>
   deleteTool: (id: string) => Promise<void>
   importFromEdcodexUrl: (url: string) => Promise<BookmarkRecord | FilesystemToolRecord>
@@ -85,6 +86,15 @@ export function useLibraryProvider(): LibraryState {
   const addTool = useCallback(
     async (input: NewToolInput) => {
       const record = await window.edToolApp.tools.create(input)
+      await refresh()
+      return record
+    },
+    [refresh]
+  )
+
+  const updateTool = useCallback(
+    async (id: string, patch: Partial<FilesystemToolRecord>) => {
+      const record = await window.edToolApp.tools.update(id, patch)
       await refresh()
       return record
     },
@@ -161,6 +171,7 @@ export function useLibraryProvider(): LibraryState {
     addBookmark,
     updateBookmark,
     addTool,
+    updateTool,
     deleteBookmark,
     deleteTool,
     importFromEdcodexUrl,

@@ -6,6 +6,11 @@ directories:
 files:
   - out/**/*
   - package.json
+# Bundled app assets (e.g. the default ED Tools icon) land next to the asar in
+# process.resourcesPath/resources; see bundledResourcePath() in db.ts.
+extraResources:
+  - from: resources
+    to: resources
 asarUnpack:
   - resources/**
 win:

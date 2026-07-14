@@ -15,17 +15,21 @@ interface LibraryGridProps {
 }
 
 type BookmarkModalTarget = 'new' | BookmarkRecord | null
-type ActiveModal = 'tool' | 'edcodex' | null
+type ToolModalTarget = 'new' | FilesystemToolRecord | null
+type KindFilter = 'all' | 'website' | 'filesystem-tool'
 
 type GridItem = { kind: 'website'; record: BookmarkRecord } | { kind: 'filesystem-tool'; record: FilesystemToolRecord }
 
 export default function LibraryGrid({ onOpenBookmark, onToolAction }: LibraryGridProps) {
-  const { bookmarks, tools, categories, deleteTool, reorderLibraryItems, loading } = useLibrary()
-  const [activeModal, setActiveModal] = useState<ActiveModal>(null)
+  const { bookmarks, tools, categories, reorderLibraryItems, loading } = useLibrary()
+  const [edcodexModalOpen, setEdcodexModalOpen] = useState(false)
   const [bookmarkModalTarget, setBookmarkModalTarget] = useState<BookmarkModalTarget>(null)
+  const [toolModalTarget, setToolModalTarget] = useState<ToolModalTarget>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
+  const [kindFilter, setKindFilter] = useState<KindFilter>('all')
+  const [categoryFilter, setCategoryFilter] = useState('')
 
   useEffect(() => {
     void window.edToolApp.settings.get().then((s) => {
@@ -52,6 +56,17 @@ export default function LibraryGrid({ onOpenBookmark, onToolAction }: LibraryGri
     ]
     return items.sort((a, b) => a.record.order - b.record.order)
   }, [bookmarks, tools])
+
+  const filtersActive = kindFilter !== 'all' || categoryFilter !== ''
+  const visibleItems = useMemo(
+    () =>
+      gridItems.filter(
+        (item) =>
+          (kindFilter === 'all' || item.kind === kindFilter) &&
+          (categoryFilter === '' || item.record.categoryIds.includes(categoryFilter))
+      ),
+    [gridItems, kindFilter, categoryFilter]
+  )
 
   const isEmpty = !loading && bookmarks.length === 0 && tools.length === 0
 
@@ -114,16 +129,59 @@ export default function LibraryGrid({ onOpenBookmark, onToolAction }: LibraryGri
         <div className="library-grid__title">Library</div>
         <div className="library-grid__actions">
           <AppSettingsControl settings={settings} onSettingsChange={handleSettingsChange} />
-          <button className="btn" onClick={() => setActiveModal('edcodex')}>
+          <button className="btn" onClick={() => setEdcodexModalOpen(true)}>
             Import from EDCodex
           </button>
-          <button className="btn" onClick={() => setActiveModal('tool')}>
+          <button className="btn" onClick={() => setToolModalTarget('new')}>
             Add Tool
           </button>
-          <button className="btn btn--accent" onClick={() => setBookmarkModalTarget('new')}>
+          <button className="btn" onClick={() => setBookmarkModalTarget('new')}>
             Add Bookmark
           </button>
         </div>
+      </div>
+
+      <div className="library-grid__filters">
+        <div className="filter-group">
+          {(
+            [
+              ['all', 'All'],
+              ['website', 'Bookmarks'],
+              ['filesystem-tool', 'Tools']
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              className={kindFilter === value ? 'btn btn--toggle-active' : 'btn'}
+              onClick={() => setKindFilter(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <select
+          className="filter-select"
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
+          <option value="">All categories</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        {filtersActive && (
+          <button
+            className="btn"
+            onClick={() => {
+              setKindFilter('all')
+              setCategoryFilter('')
+            }}
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {isEmpty && (
@@ -132,8 +190,12 @@ export default function LibraryGrid({ onOpenBookmark, onToolAction }: LibraryGri
         </div>
       )}
 
+      {!isEmpty && !loading && filtersActive && visibleItems.length === 0 && (
+        <div className="empty-state">Nothing matches the current filters.</div>
+      )}
+
       <div className="grid">
-        {gridItems.map((item) => {
+        {visibleItems.map((item) => {
           const { record } = item
           return (
             <div
@@ -178,8 +240,8 @@ export default function LibraryGrid({ onOpenBookmark, onToolAction }: LibraryGri
                     <button className="btn btn--accent" onClick={() => onToolAction(item.record)}>
                       {item.record.installedExePath ? 'Launch' : 'Locate Program...'}
                     </button>
-                    <button className="btn btn--danger" onClick={() => void deleteTool(item.record.id)}>
-                      Delete
+                    <button className="btn" onClick={() => setToolModalTarget(item.record)}>
+                      Edit
                     </button>
                   </>
                 )}
@@ -195,8 +257,13 @@ export default function LibraryGrid({ onOpenBookmark, onToolAction }: LibraryGri
           onClose={() => setBookmarkModalTarget(null)}
         />
       )}
-      {activeModal === 'tool' && <AddToolModal onClose={() => setActiveModal(null)} />}
-      {activeModal === 'edcodex' && <EdcodexImportModal onClose={() => setActiveModal(null)} />}
+      {toolModalTarget && (
+        <AddToolModal
+          tool={toolModalTarget === 'new' ? undefined : toolModalTarget}
+          onClose={() => setToolModalTarget(null)}
+        />
+      )}
+      {edcodexModalOpen && <EdcodexImportModal onClose={() => setEdcodexModalOpen(false)} />}
     </div>
   )
 }

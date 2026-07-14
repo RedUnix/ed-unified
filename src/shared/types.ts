@@ -101,6 +101,7 @@ export interface NewBookmarkInput {
   name: string
   url: string
   iconUrl?: string
+  iconLocalPath?: string
   description?: string
   categoryIds?: string[]
   source?: BookmarkSource

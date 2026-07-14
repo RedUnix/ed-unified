@@ -6,7 +6,7 @@ Browse and bookmark EDCodex tools, launch filesystem programs, chain everything 
 
 ## Features
 
-- **Unified library** -- bookmarks and filesystem tools live side by side in one grid, drag-and-drop to reorder, organized by category. [EDCodex](http://edcodex.info/) and [ED Tools](https://ed.tools/) come pre-bookmarked.
+- **Unified library** -- bookmarks and filesystem tools live side by side in one grid, drag-and-drop to reorder, organized by category with type and category filters. [EDCodex](http://edcodex.info/) and [ED Tools](https://ed.tools/) come pre-bookmarked.
 - **In-app browsing** -- embedded sites open as tabs inside the app (with back/forward navigation), never in your OS browser. Open a blank tab with the "+" button and browse anywhere from its URL bar; blank tabs use your library background as their default page.
 - **Find in page** -- Ctrl+F opens a find bar on any website tab, with match counts and previous/next navigation.
 - **One-click EDCodex import** -- paste an EDCodex tool URL, or click "Add to ED Unified" directly on an EDCodex tool page while browsing it inside the app, and the name, description, categories, and icon all come across automatically.

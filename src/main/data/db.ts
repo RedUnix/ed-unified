@@ -1,9 +1,35 @@
 import { app } from 'electron'
 import { randomUUID } from 'crypto'
 import { join } from 'path'
+import { copyFileSync, mkdirSync } from 'fs'
 import type { BookmarkRecord, LibraryDb } from '@shared/types'
 
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
+
+/** Resolves an asset shipped in the repo's resources/ dir (packaged via extraResources). */
+function bundledResourcePath(name: string): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'resources', name)
+    : join(app.getAppPath(), 'resources', name)
+}
+
+/**
+ * Copies the bundled ED Tools logo into the userData icons cache and returns
+ * its path. Bundled because ed.tools blocks direct favicon fetches from the
+ * app. Cached per-user (rather than referencing the install dir) so the
+ * bookmark keeps its icon across app updates/relocations.
+ */
+function installEdToolsIcon(): string | undefined {
+  try {
+    const destDir = join(app.getPath('userData'), 'icons')
+    mkdirSync(destDir, { recursive: true })
+    const dest = join(destDir, 'ed-tools-logo.png')
+    copyFileSync(bundledResourcePath('ed-tools-logo.png'), dest)
+    return dest
+  } catch {
+    return undefined
+  }
+}
 
 /** Default ED.Tools bookmark; also backfilled into pre-v2 libraries (see getDb). */
 function buildEdToolsBookmark(order: number): BookmarkRecord {
@@ -13,6 +39,7 @@ function buildEdToolsBookmark(order: number): BookmarkRecord {
     kind: 'website',
     name: 'ED Tools',
     url: 'https://ed.tools/',
+    iconLocalPath: installEdToolsIcon(),
     description:
       'A curated directory of Elite: Dangerous third-party tools, searchable and organized by activity.',
     categoryIds: [],
@@ -21,6 +48,14 @@ function buildEdToolsBookmark(order: number): BookmarkRecord {
     order,
     createdAt: now,
     updatedAt: now
+  }
+}
+
+function isEdToolsBookmark(bookmark: BookmarkRecord): boolean {
+  try {
+    return new URL(bookmark.url).hostname.replace(/^www\./, '') === 'ed.tools'
+  } catch {
+    return false
   }
 }
 
@@ -109,15 +144,20 @@ export function getDb(): Promise<import('lowdb').Low<LibraryDb>> {
         // v2: ED.Tools became a default library entry; add it once to existing
         // installs (skipped if the user already bookmarked it themselves).
         if ((db.data.schemaVersion ?? 1) < 2) {
-          const hasEdTools = db.data.bookmarks.some((b) => {
-            try {
-              return new URL(b.url).hostname.replace(/^www\./, '') === 'ed.tools'
-            } catch {
-              return false
-            }
-          })
-          if (!hasEdTools) db.data.bookmarks.push(buildEdToolsBookmark(nextOrder))
+          if (!db.data.bookmarks.some(isEdToolsBookmark)) {
+            db.data.bookmarks.push(buildEdToolsBookmark(nextOrder))
+          }
           db.data.schemaVersion = 2
+          needsWrite = true
+        }
+        // v3: the v2 entry shipped without an icon (ed.tools blocks favicon
+        // fetches); attach the now-bundled logo to icon-less ED.Tools entries.
+        if (db.data.schemaVersion < 3) {
+          const edTools = db.data.bookmarks.find(isEdToolsBookmark)
+          if (edTools && !edTools.iconLocalPath && !edTools.iconUrl) {
+            edTools.iconLocalPath = installEdToolsIcon()
+          }
+          db.data.schemaVersion = 3
           needsWrite = true
         }
         if (needsWrite) await db.write()

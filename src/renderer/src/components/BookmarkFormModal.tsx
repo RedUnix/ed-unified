@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import type { BookmarkRecord } from '@shared/types'
 import { useLibrary } from '../state/libraryStore'
 import CategoryPicker from './CategoryPicker'
+import { iconSrc } from '../utils/iconSrc'
 
 interface BookmarkFormModalProps {
   bookmark?: BookmarkRecord
@@ -14,6 +15,7 @@ export default function BookmarkFormModal({ bookmark, onClose }: BookmarkFormMod
   const [name, setName] = useState(bookmark?.name ?? '')
   const [url, setUrl] = useState(bookmark?.url ?? '')
   const [iconUrl, setIconUrl] = useState(bookmark?.iconUrl ?? '')
+  const [iconLocalPath, setIconLocalPath] = useState(bookmark?.iconLocalPath ?? '')
   const [description, setDescription] = useState(bookmark?.description ?? '')
   const [categoryId, setCategoryId] = useState(bookmark?.categoryIds[0] ?? '')
   const [error, setError] = useState<string | null>(null)
@@ -32,6 +34,7 @@ export default function BookmarkFormModal({ bookmark, onClose }: BookmarkFormMod
         name: name.trim(),
         url: url.trim(),
         iconUrl: iconUrl.trim() || undefined,
+        iconLocalPath: iconLocalPath || undefined,
         description: description.trim() || undefined,
         categoryIds: categoryId ? [categoryId] : []
       }
@@ -78,8 +81,39 @@ export default function BookmarkFormModal({ bookmark, onClose }: BookmarkFormMod
           />
         </div>
         <div className="field">
-          <label htmlFor="bm-icon">Icon URL (optional)</label>
-          <input id="bm-icon" value={iconUrl} onChange={(e) => setIconUrl(e.target.value)} />
+          <label htmlFor="bm-icon">Icon (optional) -- URL or local image file</label>
+          <input
+            id="bm-icon"
+            value={iconUrl}
+            onChange={(e) => setIconUrl(e.target.value)}
+            placeholder="https://example.com/icon.png"
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            {iconLocalPath && (
+              <img
+                className="card__icon card__icon--has-image"
+                src={iconSrc(iconLocalPath)}
+                alt=""
+                style={{ width: 28, height: 28 }}
+              />
+            )}
+            <button
+              type="button"
+              className="btn"
+              onClick={() =>
+                void window.edToolApp.tools.pickIconFile().then((path) => {
+                  if (path) setIconLocalPath(path)
+                })
+              }
+            >
+              {iconLocalPath ? 'Change local file...' : 'Choose local file...'}
+            </button>
+            {iconLocalPath && (
+              <button type="button" className="btn" onClick={() => setIconLocalPath('')}>
+                Clear
+              </button>
+            )}
+          </div>
         </div>
         <div className="field">
           <label htmlFor="bm-desc">Description (optional)</label>

@@ -507,6 +507,54 @@ textarea {
   gap: 8px;
 }
 
+.library-grid__filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.filter-group {
+  display: flex;
+  gap: 0;
+}
+
+.filter-group .btn {
+  border-radius: 0;
+  border-right-width: 0;
+}
+
+.filter-group .btn:first-child {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.filter-group .btn:last-child {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border-right-width: 1px;
+}
+
+.btn--toggle-active {
+  background: var(--accent-dim);
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.filter-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 8px 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .btn {
   background: var(--bg-elevated);
   border: 1px solid var(--accent);

@@ -38,6 +38,7 @@ export async function createBookmark(input: NewBookmarkInput): Promise<BookmarkR
     name: input.name,
     url: input.url,
     iconUrl: input.iconUrl,
+    iconLocalPath: input.iconLocalPath,
     description: input.description,
     categoryIds: input.categoryIds ?? [],
     themeId: null,
