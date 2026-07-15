@@ -43,6 +43,8 @@ export class WebContentsViewManager {
   private activeTabId: string | null = null
   private lastBounds: TabBounds | null = null
   private autoDarkSettings = new Map<string, AutoDarkSettings>()
+  /** Tabs whose views currently live in an overlay window; focus()/hideAll() must not touch them. */
+  private pinnedTabs = new Set<string>()
 
   constructor(
     private readonly window: BrowserWindow,
@@ -95,16 +97,18 @@ export class WebContentsViewManager {
    * in-app tab rather than handing it off to the OS browser. Not tied to any
    * persisted bookmark -- the tab and its session disappear once closed.
    */
-  async openEphemeral(url: string): Promise<string> {
+  async openEphemeral(url: string, options?: { background?: boolean }): Promise<string> {
     const tabId = randomUUID()
     const viewSession = session.fromPartition(`ephemeral-${tabId}`)
     if (getSettings().adblockEnabled) await enableAdblockForSession(viewSession)
     const view = this.createView(viewSession)
     this.wireEvents(view, tabId)
     this.tabs.set(tabId, { view, tabId })
-    this.onEvent({ type: 'new-tab', tabId, url })
+    this.onEvent({ type: 'new-tab', tabId, url, background: options?.background })
     await view.webContents.loadURL(url)
-    this.focus(tabId)
+    // Background tabs (e.g. journal chat commands while in-game) load hidden
+    // and never steal focus; the tab strip entry is the only visible change.
+    if (!options?.background) this.focus(tabId)
     return tabId
   }
 
@@ -160,7 +164,9 @@ export class WebContentsViewManager {
   }
 
   focus(tabId: string): void {
+    if (this.pinnedTabs.has(tabId)) return
     for (const [id, tab] of this.tabs) {
+      if (this.pinnedTabs.has(id)) continue
       tab.view.setVisible(id === tabId)
     }
     this.activeTabId = tabId
@@ -169,16 +175,50 @@ export class WebContentsViewManager {
 
   /** Hides every tab's native view without forgetting which one is "active" for later focus(). */
   hideAll(): void {
-    for (const tab of this.tabs.values()) tab.view.setVisible(false)
+    for (const [id, tab] of this.tabs) {
+      if (!this.pinnedTabs.has(id)) tab.view.setVisible(false)
+    }
+  }
+
+  reload(tabId: string): void {
+    this.tabs.get(tabId)?.view.webContents.reload()
+  }
+
+  /**
+   * Detaches a tab's view from the main window so an overlay window can adopt
+   * it. Returns null for unknown or already-pinned tabs.
+   */
+  takeViewForOverlay(tabId: string): WebContentsView | null {
+    const tab = this.tabs.get(tabId)
+    if (!tab || this.pinnedTabs.has(tabId)) return null
+    this.window.contentView.removeChildView(tab.view)
+    this.pinnedTabs.add(tabId)
+    if (this.activeTabId === tabId) this.activeTabId = null
+    tab.view.setVisible(true)
+    return tab.view
+  }
+
+  /** Re-adopts a view returned by takeViewForOverlay; hidden until the tab is focused again. */
+  returnViewFromOverlay(tabId: string): void {
+    const tab = this.tabs.get(tabId)
+    if (!tab || !this.pinnedTabs.has(tabId)) return
+    this.pinnedTabs.delete(tabId)
+    this.window.contentView.addChildView(tab.view)
+    tab.view.setVisible(false)
+  }
+
+  isPinned(tabId: string): boolean {
+    return this.pinnedTabs.has(tabId)
   }
 
   close(tabId: string): void {
     const tab = this.tabs.get(tabId)
     if (!tab) return
-    this.window.contentView.removeChildView(tab.view)
+    if (!this.pinnedTabs.has(tabId)) this.window.contentView.removeChildView(tab.view)
     tab.view.webContents.close()
     this.tabs.delete(tabId)
     this.autoDarkSettings.delete(tabId)
+    this.pinnedTabs.delete(tabId)
     if (this.activeTabId === tabId) this.activeTabId = null
   }
 

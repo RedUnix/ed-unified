@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import type { AppSettings, ThemeColors, UpdateCheckResult } from '@shared/types'
+import type { AppSettings, ChatCommandRecord, ImportSummary, ThemeColors, UpdateCheckResult } from '@shared/types'
 import { applyThemeColors } from '../utils/applyThemeColors'
+import { useLibrary } from '../state/libraryStore'
 
 interface AppSettingsControlProps {
   settings: AppSettings | null
@@ -15,13 +16,50 @@ const DEFAULT_COLORS: ThemeColors = {
 }
 
 export default function AppSettingsControl({ settings, onSettingsChange }: AppSettingsControlProps) {
+  const { refresh } = useLibrary()
   const [open, setOpen] = useState(false)
   const opacityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const colorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [updateCheck, setUpdateCheck] = useState<UpdateCheckResult | null>(null)
   const [checkingUpdate, setCheckingUpdate] = useState(false)
+  const [backupStatus, setBackupStatus] = useState<string | null>(null)
 
   const colors = { ...DEFAULT_COLORS, ...settings?.themeColors }
+  const chatCommands = settings?.chatCommands ?? []
+
+  async function patchSettings(patch: Partial<AppSettings>): Promise<void> {
+    const updated = await window.edToolApp.settings.update(patch)
+    onSettingsChange(updated)
+  }
+
+  function updateChatCommand(index: number, patch: Partial<ChatCommandRecord>): void {
+    const next = chatCommands.map((c, i) => (i === index ? { ...c, ...patch } : c))
+    void patchSettings({ chatCommands: next })
+  }
+
+  async function handleExport(): Promise<void> {
+    setBackupStatus(null)
+    const path = await window.edToolApp.backup.export()
+    if (path) setBackupStatus(`Exported to ${path}`)
+  }
+
+  async function handleImport(): Promise<void> {
+    setBackupStatus(null)
+    let summary: ImportSummary | null
+    try {
+      summary = await window.edToolApp.backup.import()
+    } catch (err) {
+      setBackupStatus(err instanceof Error ? err.message : String(err))
+      return
+    }
+    if (!summary) return
+    onSettingsChange(summary.settings)
+    applyThemeColors(summary.settings.themeColors)
+    await refresh()
+    setBackupStatus(
+      `Imported ${summary.bookmarks} bookmarks, ${summary.tools} tools, ${summary.categories} categories, ${summary.launchSequences} sequences.`
+    )
+  }
 
   async function handleChooseImage(): Promise<void> {
     const path = await window.edToolApp.settings.pickLibraryBackground()
@@ -150,6 +188,123 @@ export default function AppSettingsControl({ settings, onSettingsChange }: AppSe
               <button type="button" className="btn" onClick={() => void handleResetColors()}>
                 Reset Colors to Default
               </button>
+            </div>
+
+            <div className="field">
+              <label>Game Integration</label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={settings?.autoCloseToolsOnGameExit ?? false}
+                  onChange={(e) => void patchSettings({ autoCloseToolsOnGameExit: e.target.checked })}
+                />
+                <span>Close companion tools when Elite Dangerous exits</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={settings?.screenshotBackgroundEnabled ?? false}
+                  onChange={(e) =>
+                    void patchSettings({ screenshotBackgroundEnabled: e.target.checked })
+                  }
+                />
+                <span>Newest ED screenshot becomes library background</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={settings?.chatCommandsEnabled ?? false}
+                  onChange={(e) => void patchSettings({ chatCommandsEnabled: e.target.checked })}
+                />
+                <span>In-game chat commands (journal, e.g. &quot;!inara Sol&quot;)</span>
+              </label>
+            </div>
+
+            {settings?.chatCommandsEnabled && (
+              <div className="field">
+                <label>Chat Commands ({'{arg}'} = command argument)</label>
+                {chatCommands.map((command, index) => (
+                  <div key={index} style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      style={{ width: 90 }}
+                      value={command.command}
+                      placeholder="inara"
+                      onChange={(e) => updateChatCommand(index, { command: e.target.value })}
+                    />
+                    <input
+                      style={{ flex: 1 }}
+                      value={command.urlTemplate}
+                      placeholder="https://example.com/?q={arg}"
+                      onChange={(e) => updateChatCommand(index, { urlTemplate: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn--danger"
+                      onClick={() =>
+                        void patchSettings({
+                          chatCommands: chatCommands.filter((_, i) => i !== index)
+                        })
+                      }
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() =>
+                    void patchSettings({
+                      chatCommands: [...chatCommands, { command: '', urlTemplate: '' }]
+                    })
+                  }
+                >
+                  Add Command
+                </button>
+              </div>
+            )}
+
+            <div className="field">
+              <label>Local Webhook API (for VoiceAttack / scripts)</label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={settings?.webhookEnabled ?? false}
+                  onChange={(e) => void patchSettings({ webhookEnabled: e.target.checked })}
+                />
+                <span>Enable http://127.0.0.1:{settings?.webhookPort ?? 8425}</span>
+              </label>
+              {settings?.webhookEnabled && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>Port</span>
+                  <input
+                    type="number"
+                    min={1024}
+                    max={65535}
+                    style={{ width: 100 }}
+                    defaultValue={settings?.webhookPort ?? 8425}
+                    onBlur={(e) => {
+                      const port = Number(e.target.value)
+                      if (port >= 1024 && port <= 65535 && port !== settings?.webhookPort) {
+                        void patchSettings({ webhookPort: port })
+                      }
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="field">
+              <label>Backup</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="btn" onClick={() => void handleExport()}>
+                  Export Data...
+                </button>
+                <button type="button" className="btn" onClick={() => void handleImport()}>
+                  Import Data...
+                </button>
+              </div>
+              {backupStatus && <span style={{ marginTop: 6, fontSize: 12 }}>{backupStatus}</span>}
             </div>
 
             <div className="field">

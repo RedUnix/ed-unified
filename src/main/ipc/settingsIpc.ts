@@ -1,9 +1,11 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, type BrowserWindow } from 'electron'
 import { IpcChannels } from '@shared/ipcChannels'
-import type { ThemeColors } from '@shared/types'
+import type { AppSettings, ThemeColors } from '@shared/types'
 import { getSettings, updateSettings } from '../data/settingsStore'
+import { applySettingsSideEffects } from '../services'
+import { exportBackup, importBackup } from '../data/backupService'
 
-export function registerSettingsIpc(): void {
+export function registerSettingsIpc(window: BrowserWindow): void {
   ipcMain.handle(IpcChannels.settingsGet, () => getSettings())
 
   ipcMain.handle(IpcChannels.settingsPickLibraryBackground, async () => {
@@ -30,4 +32,16 @@ export function registerSettingsIpc(): void {
   ipcMain.handle(IpcChannels.settingsSetThemeColors, (_e, colors: ThemeColors | null) =>
     updateSettings({ themeColors: colors ?? undefined })
   )
+
+  // Generic patch endpoint for the newer feature toggles (auto-close, webhook,
+  // chat commands, screenshot background); restarts services as needed.
+  ipcMain.handle(IpcChannels.settingsUpdate, (_e, patch: Partial<AppSettings>) => {
+    const previous = getSettings()
+    const next = updateSettings(patch)
+    applySettingsSideEffects(previous, next, window)
+    return next
+  })
+
+  ipcMain.handle(IpcChannels.backupExport, () => exportBackup(window))
+  ipcMain.handle(IpcChannels.backupImport, () => importBackup(window))
 }

@@ -2,9 +2,13 @@ import { clipboard, ipcMain } from 'electron'
 import { IpcChannels } from '@shared/ipcChannels'
 import type { TabBounds } from '@shared/types'
 import type { WebContentsViewManager } from '../tabs/WebContentsViewManager'
+import type { OverlayManager } from '../overlay/OverlayManager'
 import { listBookmarks } from '../data/libraryRepository'
 
-export function registerTabsIpc(tabsManager: WebContentsViewManager): void {
+export function registerTabsIpc(
+  tabsManager: WebContentsViewManager,
+  overlayManager: OverlayManager
+): void {
   ipcMain.handle(IpcChannels.tabsOpen, async (_e, bookmarkId: string) => {
     const bookmarks = await listBookmarks()
     const bookmark = bookmarks.find((b) => b.id === bookmarkId)
@@ -33,6 +37,18 @@ export function registerTabsIpc(tabsManager: WebContentsViewManager): void {
   })
   ipcMain.handle(IpcChannels.tabsGoForward, (_e, tabId: string) => {
     tabsManager.goForward(tabId)
+  })
+  ipcMain.handle(IpcChannels.tabsReload, (_e, tabId: string) => {
+    tabsManager.reload(tabId)
+  })
+  ipcMain.handle(IpcChannels.tabsPinToOverlay, (_e, tabId: string, title: string) => {
+    overlayManager.pin(tabId, title)
+  })
+  ipcMain.handle(IpcChannels.tabsUnpinFromOverlay, (_e, tabId: string) => {
+    overlayManager.unpin(tabId)
+  })
+  ipcMain.handle(IpcChannels.overlaySetOpacity, (_e, tabId: string, opacity: number) => {
+    overlayManager.setOpacity(tabId, opacity)
   })
   ipcMain.handle(IpcChannels.tabsCopyUrl, (_e, tabId: string) => {
     const url = tabsManager.getUrl(tabId)

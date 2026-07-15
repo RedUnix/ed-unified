@@ -32,6 +32,16 @@ export function RocketIcon({ size = 18 }: IconProps) {
   )
 }
 
+/** Font Awesome-style thumbtack, redrawn as a stroke icon to match the set. */
+export function ThumbtackIcon({ size = 15 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...commonProps}>
+      <path d="M9 3h6v6l2.5 2.5v2.5h-11v-2.5L9 9V3z" />
+      <path d="M12 14v7" />
+    </svg>
+  )
+}
+
 export function DownloadIcon({ size = 18 }: IconProps) {
   return (
     <svg width={size} height={size} {...commonProps}>

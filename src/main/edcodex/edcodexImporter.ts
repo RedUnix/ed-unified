@@ -74,6 +74,7 @@ interface EdcodexApiEntry {
   SHORT_DESC?: string
   LONG_DESC?: string
   PLATFORM_LST?: string
+  DATE_UPDATE?: string
   cats?: Array<{ NAME?: string }>
   links?: EdcodexApiLink[]
 }
@@ -142,6 +143,13 @@ export async function importToolFromEdcodexApi(
     categoryIds,
     source: { type: 'edcodex-import', edcodexEntryId: entryId, edcodexUrl }
   })
+  // Baseline for the periodic update checker (see toolUpdateChecker.ts).
+  if (entry.DATE_UPDATE) {
+    record = await updateTool(record.id, {
+      edcodexDateUpdate: entry.DATE_UPDATE,
+      edcodexLatestDateUpdate: entry.DATE_UPDATE
+    })
+  }
 
   if (iconUrl) {
     const iconLocalPath = await downloadIcon(iconUrl)

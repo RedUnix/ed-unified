@@ -53,6 +53,11 @@ export interface FilesystemToolRecord {
   installedExePath?: string
   platform: 'windows'
   source: ToolSource
+  /** Last acknowledged EDCodex DATE_UPDATE; baseline for update-available checks. */
+  edcodexDateUpdate?: string
+  /** Newest DATE_UPDATE seen on EDCodex; kept so acknowledging can adopt it as the new baseline. */
+  edcodexLatestDateUpdate?: string
+  updateAvailable?: boolean
   order: number
   createdAt: string
   updatedAt: string
@@ -141,17 +146,25 @@ export type TabEvent =
   | { type: 'did-finish-load'; tabId: string }
   | { type: 'title-updated'; tabId: string; title: string }
   | { type: 'load-failed'; tabId: string; errorDescription: string }
-  | { type: 'new-tab'; tabId: string; url: string }
+  | { type: 'new-tab'; tabId: string; url: string; background?: boolean }
   | { type: 'nav-state'; tabId: string; canGoBack: boolean; canGoForward: boolean; url: string }
   | { type: 'find-requested'; tabId: string }
   | { type: 'find-escape'; tabId: string }
   | { type: 'found-in-page'; tabId: string; activeMatchOrdinal: number; matches: number }
+  | { type: 'overlay-changed'; tabId: string; pinned: boolean }
 
 export interface ThemeColors {
   accent: string
   accentStrong: string
   accentDim: string
   bgApp: string
+}
+
+export interface ChatCommandRecord {
+  /** Command name without the leading "!", e.g. "inara". */
+  command: string
+  /** URL with an {arg} placeholder for the command's argument. */
+  urlTemplate: string
 }
 
 export interface AppSettings {
@@ -161,6 +174,32 @@ export interface AppSettings {
   libraryBackgroundOpacity: number
   adblockEnabled: boolean
   themeColors?: ThemeColors
+  /** Close app-managed companion tools when EliteDangerous64.exe exits. */
+  autoCloseToolsOnGameExit: boolean
+  /** Newest ED screenshot automatically becomes the library background. */
+  screenshotBackgroundEnabled: boolean
+  webhookEnabled: boolean
+  webhookPort: number
+  /** Watch the ED journal for "!command arg" local-chat messages. */
+  chatCommandsEnabled: boolean
+  chatCommands: ChatCommandRecord[]
+}
+
+/** Portable backup bundle produced by Settings > Export. */
+export interface BackupBundle {
+  app: 'ed-unified'
+  bundleVersion: number
+  exportedAt: string
+  library: LibraryDb
+  settings: Omit<AppSettings, 'windowBounds'>
+}
+
+export interface ImportSummary {
+  bookmarks: number
+  tools: number
+  categories: number
+  launchSequences: number
+  settings: AppSettings
 }
 
 export interface DownloadRecord {

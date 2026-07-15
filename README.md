@@ -14,6 +14,11 @@ Browse and bookmark EDCodex tools, launch filesystem programs, chain everything 
 - **Launch sequences** -- chain a game launch (Steam/Epic/direct) with companion tools and custom delays, then generate a `.bat` file or run it straight from the app (`.bat` generation is Windows-only).
 - **Auto dark theming** -- per-site brightness/contrast/sepia controls with a smart auto-invert for bright pages, plus legacy one-click presets.
 - **Custom library background** -- set your own background image with adjustable opacity behind the library grid.
+- **Game overlay** -- pin any tab as a floating always-on-top window (with opacity control) over Elite in borderless-windowed mode.
+- **Game-aware automation** -- optionally auto-close companion tools when the game exits, trigger pages from in-game chat commands (`!inara Sol`), and set each new ED screenshot as the library background.
+- **Tool update badges** -- tools imported from EDCodex get an update badge when a newer version is listed.
+- **Backup & restore** -- export/import your entire library and settings as one JSON file.
+- **Local webhook API** -- drive the app from VoiceAttack or scripts over localhost (see below).
 - **Built-in ad/tracker blocking** for embedded tabs.
 - **Fully customizable theme colors** and a collapsible sidebar.
 - **Fullscreen/borderless mode** for a clean, distraction-free layout.
@@ -67,6 +72,19 @@ npm run build:linux    # build the Linux AppImage (release/)
 ```
 
 > Note: `build:linux` must run on Linux (AppImage assembly creates symlinks, which Windows blocks without elevation or Developer Mode). Pushing a `v*` tag builds both installers via GitHub Actions and attaches them to a draft release.
+
+## Webhook API
+
+Enable it in Settings (off by default; binds to `127.0.0.1` only, default port `8425`). Bookmarks and sequences match by id or name.
+
+```sh
+curl http://127.0.0.1:8425/status
+curl -X POST http://127.0.0.1:8425/open-bookmark -d "{\"name\": \"INARA\"}"
+curl -X POST http://127.0.0.1:8425/open-url -d "{\"url\": \"https://coriolis.io\"}"
+curl -X POST http://127.0.0.1:8425/run-sequence -d "{\"name\": \"Full Stack\"}"
+curl -X POST http://127.0.0.1:8425/refresh-tab
+curl -X POST http://127.0.0.1:8425/show-library
+```
 
 ## Tech Stack
 

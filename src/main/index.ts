@@ -8,6 +8,7 @@ import {
   findProtocolUrlInArgv
 } from './protocol/protocolHandler'
 import { registerLocalFileSchemeAsPrivileged, registerLocalFileProtocolHandler } from './localFileProtocol'
+import { initServices } from './services'
 import { IpcChannels } from '@shared/ipcChannels'
 import { createBookmark, findOrCreateCategoryByName, updateBookmark } from './data/libraryRepository'
 import { importToolFromEdcodexApi } from './edcodex/edcodexImporter'
@@ -92,7 +93,7 @@ if (!gotLock) {
       bootShownAt = Date.now()
     })
 
-    const { window, tabsManager, downloadManager } = createMainWindow(
+    const { window, tabsManager, downloadManager, overlayManager } = createMainWindow(
       () => {
         const elapsed = bootShownAt ? Date.now() - bootShownAt : BOOT_MIN_DISPLAY_MS
         const remaining = Math.max(0, BOOT_MIN_DISPLAY_MS - elapsed)
@@ -101,7 +102,8 @@ if (!gotLock) {
       (url) => void handleProtocolUrl(url)
     )
     mainWindow = window
-    registerIpc(window, tabsManager, downloadManager)
+    registerIpc(window, tabsManager, downloadManager, overlayManager)
+    initServices(window, tabsManager)
   })
 
   app.on('window-all-closed', () => {

@@ -4,6 +4,7 @@ import type {
   AppSettings,
   AutoDarkSettings,
   BookmarkRecord,
+  ImportSummary,
   NewBookmarkInput,
   FilesystemToolRecord,
   NewToolInput,
@@ -80,7 +81,16 @@ const api = {
     findInPage: (tabId: string, text: string, forward: boolean, findNext: boolean): Promise<void> =>
       ipcRenderer.invoke(IpcChannels.tabsFindInPage, tabId, text, forward, findNext),
     stopFindInPage: (tabId: string): Promise<void> =>
-      ipcRenderer.invoke(IpcChannels.tabsStopFindInPage, tabId)
+      ipcRenderer.invoke(IpcChannels.tabsStopFindInPage, tabId),
+    reload: (tabId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsReload, tabId),
+    pinToOverlay: (tabId: string, title: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.tabsPinToOverlay, tabId, title),
+    unpinFromOverlay: (tabId: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.tabsUnpinFromOverlay, tabId)
+  },
+  overlay: {
+    setOpacity: (tabId: string, opacity: number): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.overlaySetOpacity, tabId, opacity)
   },
   theming: {
     listThemes: (): Promise<ThemeRecord[]> => ipcRenderer.invoke(IpcChannels.themingListThemes),
@@ -102,7 +112,36 @@ const api = {
     setAdblockEnabled: (enabled: boolean): Promise<AppSettings> =>
       ipcRenderer.invoke(IpcChannels.settingsSetAdblockEnabled, enabled),
     setThemeColors: (colors: ThemeColors | null): Promise<AppSettings> =>
-      ipcRenderer.invoke(IpcChannels.settingsSetThemeColors, colors)
+      ipcRenderer.invoke(IpcChannels.settingsSetThemeColors, colors),
+    update: (patch: Partial<AppSettings>): Promise<AppSettings> =>
+      ipcRenderer.invoke(IpcChannels.settingsUpdate, patch),
+    onChanged: (cb: (settings: AppSettings) => void): (() => void) => {
+      const listener = (_e: unknown, settings: AppSettings): void => cb(settings)
+      ipcRenderer.on(IpcChannels.settingsChanged, listener)
+      return () => ipcRenderer.removeListener(IpcChannels.settingsChanged, listener)
+    }
+  },
+  backup: {
+    export: (): Promise<string | null> => ipcRenderer.invoke(IpcChannels.backupExport),
+    import: (): Promise<ImportSummary | null> => ipcRenderer.invoke(IpcChannels.backupImport)
+  },
+  toolUpdates: {
+    checkNow: (): Promise<boolean> => ipcRenderer.invoke(IpcChannels.toolUpdatesCheckNow),
+    acknowledge: (toolId: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.toolUpdatesAcknowledge, toolId),
+    onChanged: (cb: () => void): (() => void) => {
+      const listener = (): void => cb()
+      ipcRenderer.on(IpcChannels.toolUpdatesChanged, listener)
+      return () => ipcRenderer.removeListener(IpcChannels.toolUpdatesChanged, listener)
+    }
+  },
+  onWebhookCommand: (
+    cb: (command: { type: string; id?: string; url?: string }) => void
+  ): (() => void) => {
+    const listener = (_e: unknown, command: { type: string; id?: string; url?: string }): void =>
+      cb(command)
+    ipcRenderer.on(IpcChannels.webhookCommand, listener)
+    return () => ipcRenderer.removeListener(IpcChannels.webhookCommand, listener)
   },
   window: {
     toggleFullscreen: (): Promise<void> => ipcRenderer.invoke(IpcChannels.windowToggleFullscreen),

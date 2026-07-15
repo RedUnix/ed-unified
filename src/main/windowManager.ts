@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { WebContentsViewManager } from './tabs/WebContentsViewManager'
 import { DownloadManager } from './downloads/downloadManager'
+import { OverlayManager } from './overlay/OverlayManager'
 import { IpcChannels } from '@shared/ipcChannels'
 import { getSettings, updateSettings } from './data/settingsStore'
 import { registerDevToolsToggle } from './devtools'
@@ -14,6 +15,7 @@ export function createMainWindow(
   window: BrowserWindow
   tabsManager: WebContentsViewManager
   downloadManager: DownloadManager
+  overlayManager: OverlayManager
 } {
   const settings = getSettings()
   const window = new BrowserWindow({
@@ -58,6 +60,12 @@ export function createMainWindow(
     (session) => downloadManager.attachToSession(session)
   )
 
+  const overlayManager = new OverlayManager(tabsManager, (event: TabEvent) => {
+    if (!window.isDestroyed()) window.webContents.send(IpcChannels.tabsEvent, event)
+  })
+  // Overlay windows would otherwise keep the app alive after the main window closes.
+  window.on('closed', () => overlayManager.destroyAll())
+
   const devServerUrl = process.env['ELECTRON_RENDERER_URL']
   if (!app.isPackaged && devServerUrl) {
     window.loadURL(devServerUrl)
@@ -65,5 +73,5 @@ export function createMainWindow(
     window.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  return { window, tabsManager, downloadManager }
+  return { window, tabsManager, downloadManager, overlayManager }
 }

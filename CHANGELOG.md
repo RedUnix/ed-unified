@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.5.0
+
+### Added
+
+- **Game overlay (pinned tabs)**: a pin button in the tab strip floats the current tab in a frameless always-on-top window -- perfect for keeping Inara or EDSM over the game in borderless-windowed mode. The overlay has a drag bar, an opacity slider, and a return button; the tab keeps its session, logins, and scroll position when moving in and out.
+- **Auto-close companion tools on game exit** (Settings, off by default): when Elite Dangerous exits, any running program that matches a library tool's installed path is closed automatically -- including tools started by launch sequences.
+- **Tool update badges**: tools imported from EDCodex are checked against the EDCodex API on launch and every 6 hours. When an entry has been updated since you imported it, an "Update" badge appears on the card; clicking it opens the EDCodex page and clears the badge.
+- **Backup & restore** (Settings): export your whole library (bookmarks, tools, categories, launch sequences) plus settings to a single JSON file, and import it on any machine. Local file paths that don't exist on the target machine are dropped gracefully.
+- **In-game chat commands** (Settings, off by default): the app tails your Elite journal for local-chat messages like `!inara Sol` and opens the mapped page in a background tab without stealing focus from the game. `!inara` and `!edsm` ship as defaults; add your own command-to-URL mappings with an `{arg}` placeholder.
+- **Dynamic screenshot background** (Settings, off by default): every new Elite Dangerous screenshot automatically becomes the library background.
+- **Local webhook API** (Settings, off by default): a localhost-only HTTP server (default port 8425) lets VoiceAttack or scripts drive the app -- `GET /status`, `POST /open-bookmark`, `/open-url`, `/run-sequence`, `/refresh-tab`, `/show-library` (bookmarks and sequences match by id or name). See the README for examples.
+
+### Fixed
+
+- The theme color pickers in Settings now actually show the currently selected color -- the shared form-input styling was squeezing the color swatch into an invisible sliver (present since v0.1.0).
+
 ## v0.4.0
 
 ### Added
