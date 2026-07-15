@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.0
+
+### Added
+
+- **One-click tool install from EDCodex**: the "Add to ED Unified" button now also appears on Windows-platform EDCodex entries (both inside the app and via the browser userscript, updated to v1.2.0). Clicking it imports the tool's name, description, categories, and icon automatically via the EDCodex JSON API and creates a library card immediately; a modal then walks you through downloading the program and linking it with the card's "Locate Program..." button, including an "Open Download Page" shortcut to the entry's homepage/source link. Web-application entries keep the existing bookmark import. If the tool is already in your library, clicking the button again tells you so instead of creating a duplicate.
+- **Download manager**: files downloaded from embedded sites now save straight to your Downloads folder and appear in a new Downloads section in the sidebar (under Launch Sequences, with an active-download badge). Each download shows live progress, speed, ETA, and destination folder (click it to reveal the file), can be cancelled, and has a "Launch when done" toggle that opens the file automatically once it finishes -- handy for tool installers grabbed via the new EDCodex install flow.
+
 ## v0.3.1
 
 ### Added

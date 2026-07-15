@@ -4,8 +4,10 @@ import { PROTOCOL_SCHEME } from '../protocol/protocolHandler'
  * Injected into every embedded tab on `did-finish-load` (cheap no-op on any
  * page that isn't an EDCodex tool page). Adds an "Add to ED Unified" link
  * directly into the page's own `<ul class="links">`, matching its native
- * markup, for Web-application-platform tools only (native Windows/Mac/Linux
- * tools belong in the Library as filesystem tools, added manually).
+ * markup. Web-application entries import as bookmarks (full payload extracted
+ * from the DOM); Windows-platform entries import as filesystem tools (just
+ * the entry id + logo URL -- the app fetches the rest from the EDCodex JSON
+ * API and instructs the user to install + "Locate Program...").
  *
  * Runs entirely in-app: clicking the link navigates to an `edtoolapp://`
  * URL that WebContentsViewManager's `will-navigate` handler intercepts and
@@ -13,6 +15,9 @@ import { PROTOCOL_SCHEME } from '../protocol/protocolHandler'
  * involved -- this replaces the original browser-userscript design, which
  * only ever worked for pages visited in the user's own separate browser, not
  * pages embedded inside this app.
+ *
+ * NOTE: userscript/ed-unified-app.user.js is the standalone-browser twin of
+ * this script -- selector or payload changes must be mirrored there.
  */
 export function buildEdcodexPageScript(): string {
   return `(() => {
@@ -30,7 +35,9 @@ export function buildEdcodexPageScript(): string {
     if (!entry) return;
 
     const platform = entry.querySelector('span.lang[itemprop="operatingSystem"]')?.textContent?.trim() ?? '';
-    if (platform.toLowerCase() !== 'web application') return;
+    const isWebApp = platform.toLowerCase() === 'web application';
+    const isWindows = !isWebApp && /\\bwin/i.test(platform);
+    if (!isWebApp && !isWindows) return;
 
     if (entry.querySelector('#ed-unified-add-link')) return;
 
@@ -74,6 +81,17 @@ export function buildEdcodexPageScript(): string {
       location.href = '${PROTOCOL_SCHEME}://import-bookmark?' + params.toString();
     }
 
+    function sendToolToApp() {
+      const entryId = new URLSearchParams(location.search).get('entry');
+      if (!entryId) return false;
+      const logoImg = entry.querySelector('ul.images li img[alt="Logo"]') ?? entry.querySelector('ul.images li img');
+      const params = new URLSearchParams();
+      params.set('entry', entryId);
+      if (logoImg) params.set('icon', logoImg.src);
+      location.href = '${PROTOCOL_SCHEME}://import-tool?' + params.toString();
+      return true;
+    }
+
     let linksList = entry.querySelector('ul.links');
     if (!linksList) {
       linksList = document.createElement('ul');
@@ -95,6 +113,10 @@ export function buildEdcodexPageScript(): string {
     link.textContent = 'Add to ED Unified';
     link.addEventListener('click', (event) => {
       event.preventDefault();
+      if (isWindows) {
+        if (sendToolToApp()) link.textContent = 'Sent to ED Unified \\u2713';
+        return;
+      }
       sendToApp();
     });
 

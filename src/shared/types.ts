@@ -163,6 +163,24 @@ export interface AppSettings {
   themeColors?: ThemeColors
 }
 
+export interface DownloadRecord {
+  id: string
+  filename: string
+  url: string
+  savePath: string
+  /** Directory containing savePath, shown in the UI and used for "Show in folder". */
+  directory: string
+  state: 'progressing' | 'completed' | 'cancelled' | 'interrupted'
+  receivedBytes: number
+  /** 0 when the server didn't report a size. */
+  totalBytes: number
+  bytesPerSecond: number
+  /** null while unknown (no total size or no speed sample yet). */
+  etaSeconds: number | null
+  launchWhenDone: boolean
+  startedAt: string
+}
+
 export interface UpdateCheckResult {
   available: boolean
   currentVersion: string
@@ -176,4 +194,21 @@ export interface ProtocolImportPayload {
   icon?: string
   description?: string
   categories: string[]
+}
+
+export interface ProtocolToolImportPayload {
+  entryId: string
+  /** Logo URL scraped from the entry page DOM -- the EDCodex JSON API has no icon field. */
+  icon?: string
+}
+
+export type ProtocolPayload =
+  | { kind: 'bookmark'; payload: ProtocolImportPayload }
+  | { kind: 'tool'; payload: ProtocolToolImportPayload }
+
+/** Sent to the renderer after an edtoolapp://import-tool navigation is resolved. */
+export interface ProtocolToolImportResult {
+  record: FilesystemToolRecord
+  downloadUrl?: string
+  alreadyExisted: boolean
 }

@@ -47,7 +47,8 @@ export class WebContentsViewManager {
   constructor(
     private readonly window: BrowserWindow,
     private readonly onEvent: (event: TabEvent) => void,
-    private readonly onProtocolUrl: (url: string) => void
+    private readonly onProtocolUrl: (url: string) => void,
+    private readonly onSessionCreated?: (session: Electron.Session) => void
   ) {
     ipcMain.on(IpcChannels.tabsJsDialog, (event, request: TabJsDialogRequest) => {
       if (request.kind === 'confirm') {
@@ -139,6 +140,7 @@ export class WebContentsViewManager {
   }
 
   private createView(viewSession: Electron.Session): WebContentsView {
+    this.onSessionCreated?.(viewSession)
     const view = new WebContentsView({
       webPreferences: {
         session: viewSession,

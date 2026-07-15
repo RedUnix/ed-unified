@@ -4,6 +4,7 @@ import BookmarkIcon from './BookmarkIcon'
 import {
   ComputerIcon,
   RocketIcon,
+  DownloadIcon,
   MaximizeIcon,
   RestoreIcon,
   ChevronCollapseIcon,
@@ -13,13 +14,15 @@ import {
 interface SidebarProps {
   bookmarks: BookmarkRecord[]
   tools: FilesystemToolRecord[]
-  activeSection: 'library' | 'tab' | 'sequences'
+  activeSection: 'library' | 'tab' | 'sequences' | 'downloads'
   activeTabId: string | null
   collapsed: boolean
   isFullscreen: boolean
+  activeDownloadCount: number
   onOpenBookmark: (id: string) => void
   onShowLibrary: () => void
   onShowSequences: () => void
+  onShowDownloads: () => void
   onLaunchTool: (tool: FilesystemToolRecord) => void
   onToggleCollapsed: () => void
   onToggleFullscreen: () => void
@@ -34,9 +37,11 @@ export default function Sidebar({
   activeTabId,
   collapsed,
   isFullscreen,
+  activeDownloadCount,
   onOpenBookmark,
   onShowLibrary,
   onShowSequences,
+  onShowDownloads,
   onLaunchTool,
   onToggleCollapsed,
   onToggleFullscreen,
@@ -63,6 +68,17 @@ export default function Sidebar({
       >
         <RocketIcon />
         {!collapsed && <span>Launch Sequences</span>}
+      </button>
+      <button
+        className={itemClass(activeSection === 'downloads')}
+        onClick={onShowDownloads}
+        title="Downloads"
+      >
+        <DownloadIcon />
+        {!collapsed && <span>Downloads</span>}
+        {activeDownloadCount > 0 && (
+          <span className="sidebar__badge">{activeDownloadCount}</span>
+        )}
       </button>
 
       {bookmarks.length > 0 && !collapsed && <div className="sidebar__section-label">Bookmarks</div>}
