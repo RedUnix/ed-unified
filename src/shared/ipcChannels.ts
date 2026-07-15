@@ -59,7 +59,16 @@ export const IpcChannels = {
   windowFullscreenChanged: 'window:fullscreenChanged',
 
   protocolImport: 'protocol:import',
+  protocolImportTool: 'protocol:importTool',
 
   updatesCheck: 'updates:check',
-  updatesOpenReleasePage: 'updates:openReleasePage'
+  updatesOpenReleasePage: 'updates:openReleasePage',
+
+  downloadsList: 'downloads:list',
+  downloadsCancel: 'downloads:cancel',
+  downloadsSetLaunchWhenDone: 'downloads:setLaunchWhenDone',
+  downloadsShowInFolder: 'downloads:showInFolder',
+  downloadsOpenFile: 'downloads:openFile',
+  downloadsClearFinished: 'downloads:clearFinished',
+  downloadsEvent: 'downloads:event'
 } as const

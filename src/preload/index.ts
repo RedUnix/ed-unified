@@ -9,8 +9,10 @@ import type {
   NewToolInput,
   NewCategoryInput,
   CategoryRecord,
+  DownloadRecord,
   LaunchSequenceRecord,
   NewLaunchSequenceInput,
+  ProtocolToolImportResult,
   TabBounds,
   TabEvent,
   ThemeColors,
@@ -115,6 +117,22 @@ const api = {
     openReleasePage: (url: string): Promise<void> =>
       ipcRenderer.invoke(IpcChannels.updatesOpenReleasePage, url)
   },
+  downloads: {
+    list: (): Promise<DownloadRecord[]> => ipcRenderer.invoke(IpcChannels.downloadsList),
+    cancel: (id: string): Promise<void> => ipcRenderer.invoke(IpcChannels.downloadsCancel, id),
+    setLaunchWhenDone: (id: string, launchWhenDone: boolean): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.downloadsSetLaunchWhenDone, id, launchWhenDone),
+    showInFolder: (id: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.downloadsShowInFolder, id),
+    openFile: (id: string): Promise<void> => ipcRenderer.invoke(IpcChannels.downloadsOpenFile, id),
+    clearFinished: (): Promise<DownloadRecord[]> =>
+      ipcRenderer.invoke(IpcChannels.downloadsClearFinished),
+    onEvent: (cb: (record: DownloadRecord) => void): (() => void) => {
+      const listener = (_e: unknown, record: DownloadRecord): void => cb(record)
+      ipcRenderer.on(IpcChannels.downloadsEvent, listener)
+      return () => ipcRenderer.removeListener(IpcChannels.downloadsEvent, listener)
+    }
+  },
   onTabEvent: (cb: (evt: TabEvent) => void): (() => void) => {
     const listener = (_e: unknown, evt: TabEvent): void => cb(evt)
     ipcRenderer.on(IpcChannels.tabsEvent, listener)
@@ -124,6 +142,11 @@ const api = {
     const listener = (_e: unknown, record: BookmarkRecord): void => cb(record)
     ipcRenderer.on(IpcChannels.protocolImport, listener)
     return () => ipcRenderer.removeListener(IpcChannels.protocolImport, listener)
+  },
+  onProtocolToolImport: (cb: (result: ProtocolToolImportResult) => void): (() => void) => {
+    const listener = (_e: unknown, result: ProtocolToolImportResult): void => cb(result)
+    ipcRenderer.on(IpcChannels.protocolImportTool, listener)
+    return () => ipcRenderer.removeListener(IpcChannels.protocolImportTool, listener)
   },
   onFullscreenChange: (cb: (isFullscreen: boolean) => void): (() => void) => {
     const listener = (_e: unknown, isFullscreen: boolean): void => cb(isFullscreen)

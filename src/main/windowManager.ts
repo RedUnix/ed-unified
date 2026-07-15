@@ -1,10 +1,11 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { WebContentsViewManager } from './tabs/WebContentsViewManager'
+import { DownloadManager } from './downloads/downloadManager'
 import { IpcChannels } from '@shared/ipcChannels'
 import { getSettings, updateSettings } from './data/settingsStore'
 import { registerDevToolsToggle } from './devtools'
-import type { TabEvent } from '@shared/types'
+import type { DownloadRecord, TabEvent } from '@shared/types'
 
 export function createMainWindow(
   onReadyToShow?: () => void,
@@ -12,6 +13,7 @@ export function createMainWindow(
 ): {
   window: BrowserWindow
   tabsManager: WebContentsViewManager
+  downloadManager: DownloadManager
 } {
   const settings = getSettings()
   const window = new BrowserWindow({
@@ -43,12 +45,17 @@ export function createMainWindow(
   })
   registerDevToolsToggle(window.webContents)
 
+  const downloadManager = new DownloadManager((record: DownloadRecord) => {
+    if (!window.isDestroyed()) window.webContents.send(IpcChannels.downloadsEvent, record)
+  })
+
   const tabsManager = new WebContentsViewManager(
     window,
     (event: TabEvent) => {
       window.webContents.send(IpcChannels.tabsEvent, event)
     },
-    (url: string) => onProtocolUrl?.(url)
+    (url: string) => onProtocolUrl?.(url),
+    (session) => downloadManager.attachToSession(session)
   )
 
   const devServerUrl = process.env['ELECTRON_RENDERER_URL']
@@ -58,5 +65,5 @@ export function createMainWindow(
     window.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  return { window, tabsManager }
+  return { window, tabsManager, downloadManager }
 }

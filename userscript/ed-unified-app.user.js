@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         ED Unified - Add to Library
 // @namespace    ed-unified-app
-// @version      1.1.0
-// @description  Send the current page (or an EDCodex tool entry) to ED Unified as a bookmark
+// @version      1.2.0
+// @description  Send the current page (or an EDCodex tool entry) to ED Unified as a bookmark, or auto-import Windows tools from EDCodex
 // @match        https://edcodex.info/*
 // @match        https://*/*
 // @match        http://*/*
@@ -33,13 +33,31 @@
     )
   }
 
-  // Only web-app tools become bookmarks in ED Unified; native Windows/Mac/
-  // Linux tools are added to the Library as filesystem tools instead (via the
-  // app's own "Add Tool" flow, not this userscript), so the link shouldn't
-  // appear on those pages at all.
+  function entryPlatform(entry) {
+    return entry.querySelector('span.lang[itemprop="operatingSystem"]')?.textContent?.trim() ?? ''
+  }
+
+  // Web-app tools become bookmarks in ED Unified; Windows tools are imported
+  // as filesystem tools (metadata auto-filled via the EDCodex JSON API -- the
+  // app fetches it from the entry id we send along).
   function isWebApplicationTool(entry) {
-    const platform = entry.querySelector('span.lang[itemprop="operatingSystem"]')?.textContent?.trim() ?? ''
-    return platform.toLowerCase() === 'web application'
+    return entryPlatform(entry).toLowerCase() === 'web application'
+  }
+
+  function isWindowsTool(entry) {
+    return /\bwin/i.test(entryPlatform(entry))
+  }
+
+  function sendToolToApp() {
+    const entryId = new URLSearchParams(window.location.search).get('entry')
+    if (!entryId) return false
+    const entry = document.querySelector('.entry')
+    const logoImg = entry?.querySelector('ul.images li img[alt="Logo"]') ?? entry?.querySelector('ul.images li img')
+    const params = new URLSearchParams()
+    params.set('entry', entryId)
+    if (logoImg) params.set('icon', logoImg.src)
+    window.location.href = `edtoolapp://import-tool?${params.toString()}`
+    return true
   }
 
   function pickEdcodexHomepageLink(entry) {
@@ -83,7 +101,9 @@
   function injectEdcodexLink() {
     const entry = document.querySelector('.entry')
     if (!entry) return
-    if (!isWebApplicationTool(entry)) return
+    const isWebApp = isWebApplicationTool(entry)
+    const isWindows = !isWebApp && isWindowsTool(entry)
+    if (!isWebApp && !isWindows) return
 
     if (entry.querySelector('#ed-unified-add-link')) return // already injected
 
@@ -108,6 +128,12 @@
     link.textContent = 'Add to ED Unified'
     link.addEventListener('click', (event) => {
       event.preventDefault()
+      if (isWindows) {
+        // The app resolves the rest from the EDCodex JSON API and pops its own
+        // "download and install, then Locate Program..." instructions.
+        if (sendToolToApp()) link.textContent = 'Sent to ED Unified ✓'
+        return
+      }
       const data = extractEdcodexEntry()
       if (!data) {
         window.alert('Could not read this EDCodex entry.')

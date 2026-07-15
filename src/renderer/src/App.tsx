@@ -9,8 +9,16 @@ import UpdateToast from './components/UpdateToast'
 import FindBar from './components/FindBar'
 import UrlBar from './components/UrlBar'
 import NewTabPage from './components/NewTabPage'
+import EdcodexToolAddedModal from './components/EdcodexToolAddedModal'
+import DownloadsPanel from './components/DownloadsPanel'
 import { LibraryContext, useLibraryProvider, useLibrary } from './state/libraryStore'
-import type { AutoDarkSettings, FilesystemToolRecord, UpdateCheckResult } from '@shared/types'
+import type {
+  AutoDarkSettings,
+  DownloadRecord,
+  FilesystemToolRecord,
+  ProtocolToolImportResult,
+  UpdateCheckResult
+} from '@shared/types'
 
 interface OpenTab {
   id: string
@@ -21,7 +29,7 @@ interface OpenTab {
   loaded: boolean
 }
 
-type Section = 'library' | 'tab' | 'sequences'
+type Section = 'library' | 'tab' | 'sequences' | 'downloads'
 
 /** Turns URL-bar input into a loadable URL: scheme'd input passes through, bare domains get https://, anything else becomes a search. */
 function normalizeUrlInput(raw: string): string | null {
@@ -44,6 +52,26 @@ function AppShell() {
     {}
   )
   const [findOpen, setFindOpen] = useState(false)
+  const [toolImportResult, setToolImportResult] = useState<ProtocolToolImportResult | null>(null)
+  const [downloads, setDownloads] = useState<DownloadRecord[]>([])
+
+  useEffect(() => {
+    void window.edToolApp.downloads.list().then(setDownloads)
+    const unsubscribe = window.edToolApp.downloads.onEvent((record) => {
+      setDownloads((prev) => {
+        const index = prev.findIndex((d) => d.id === record.id)
+        if (index === -1) return [record, ...prev]
+        const next = [...prev]
+        next[index] = record
+        return next
+      })
+    })
+    return unsubscribe
+  }, [])
+
+  const clearFinishedDownloads = useCallback(() => {
+    void window.edToolApp.downloads.clearFinished().then(setDownloads)
+  }, [])
   const [themePanelOpen, setThemePanelOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -134,6 +162,29 @@ function AppShell() {
     [openTabs]
   )
 
+  const openUrlInNewTab = useCallback((url: string) => {
+    const id = crypto.randomUUID()
+    setOpenTabs((prev) => [...prev, { id, url, kind: 'browse', loaded: true }])
+    setActiveTabId(id)
+    setSection('tab')
+    setFindOpen(false)
+    void window.edToolApp.tabs.openUrl(id, url)
+  }, [])
+
+  // A tool arrived via edtoolapp://import-tool (EDCodex page button). Jump to
+  // the library so the new card -- and the DOM modal, which a native tab view
+  // would otherwise cover -- are actually visible.
+  useEffect(() => {
+    const unsubscribe = window.edToolApp.onProtocolToolImport((result) => {
+      void library.refresh()
+      setSection('library')
+      setFindOpen(false)
+      void window.edToolApp.tabs.hideAll()
+      setToolImportResult(result)
+    })
+    return unsubscribe
+  }, [library.refresh])
+
   const openNewTab = useCallback(() => {
     const id = crypto.randomUUID()
     setOpenTabs((prev) => [...prev, { id, url: '', kind: 'browse', loaded: false }])
@@ -197,6 +248,12 @@ function AppShell() {
 
   const showSequences = useCallback(() => {
     setSection('sequences')
+    setFindOpen(false)
+    void window.edToolApp.tabs.hideAll()
+  }, [])
+
+  const showDownloads = useCallback(() => {
+    setSection('downloads')
     setFindOpen(false)
     void window.edToolApp.tabs.hideAll()
   }, [])
@@ -283,6 +340,16 @@ function AppShell() {
 
   return (
     <div className="app-shell">
+      {toolImportResult && (
+        <EdcodexToolAddedModal
+          result={toolImportResult}
+          onOpenDownloadPage={(url) => {
+            setToolImportResult(null)
+            openUrlInNewTab(url)
+          }}
+          onClose={() => setToolImportResult(null)}
+        />
+      )}
       {showUpdateToast && updateInfo && (
         <UpdateToast
           updateInfo={updateInfo}
@@ -297,9 +364,11 @@ function AppShell() {
         activeTabId={activeTabId}
         collapsed={sidebarCollapsed}
         isFullscreen={isFullscreen}
+        activeDownloadCount={downloads.filter((d) => d.state === 'progressing').length}
         onOpenBookmark={openBookmark}
         onShowLibrary={showLibrary}
         onShowSequences={showSequences}
+        onShowDownloads={showDownloads}
         onLaunchTool={handleToolAction}
         onToggleCollapsed={toggleSidebarCollapsed}
         onToggleFullscreen={toggleFullscreen}
@@ -326,6 +395,9 @@ function AppShell() {
             <LibraryGrid onOpenBookmark={openBookmark} onToolAction={handleToolAction} />
           )}
           {section === 'sequences' && <SequencesPanel />}
+          {section === 'downloads' && (
+            <DownloadsPanel downloads={downloads} onClearFinished={clearFinishedDownloads} />
+          )}
           {showingTab && (
             <>
               {activeTab?.kind === 'browse' && (
