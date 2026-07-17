@@ -2,7 +2,8 @@ import { ipcMain, shell } from 'electron'
 import { IpcChannels } from '@shared/ipcChannels'
 import type { LaunchSequenceRecord, NewLaunchSequenceInput } from '@shared/types'
 import * as repo from '../data/libraryRepository'
-import { writeBatFile, deleteBatFile } from '../platform/windowsBatBuilder'
+import { writeSequenceScript, deleteSequenceScript } from '../platform/sequenceScriptBuilder'
+import { track } from '../analytics/analytics'
 import { launchPath } from '../platform'
 
 export function registerSequencesIpc(): void {
@@ -17,7 +18,7 @@ export function registerSequencesIpc(): void {
   ipcMain.handle(IpcChannels.sequencesDelete, async (_e, id: string) => {
     const sequences = await repo.listLaunchSequences()
     const sequence = sequences.find((s) => s.id === id)
-    deleteBatFile(sequence?.batFilePath)
+    deleteSequenceScript(sequence?.batFilePath)
     await repo.deleteLaunchSequence(id)
   })
 
@@ -25,7 +26,10 @@ export function registerSequencesIpc(): void {
     const [sequences, tools] = await Promise.all([repo.listLaunchSequences(), repo.listTools()])
     const sequence = sequences.find((s) => s.id === id)
     if (!sequence) throw new Error(`Launch sequence not found: ${id}`)
-    const batFilePath = writeBatFile(sequence, tools)
+    // Field is named batFilePath for historical reasons; on Linux/macOS it
+    // holds the generated .sh path.
+    const batFilePath = writeSequenceScript(sequence, tools)
+    track('sequence_script_generated')
     return repo.updateLaunchSequence(id, { batFilePath })
   })
 
@@ -34,16 +38,17 @@ export function registerSequencesIpc(): void {
     let sequence = sequences.find((s) => s.id === id)
     if (!sequence) throw new Error(`Launch sequence not found: ${id}`)
     if (!sequence.batFilePath) {
-      const batFilePath = writeBatFile(sequence, tools)
+      const batFilePath = writeSequenceScript(sequence, tools)
       sequence = await repo.updateLaunchSequence(id, { batFilePath })
     }
     launchPath(sequence.batFilePath as string)
+    track('sequence_run', { steps: sequence.steps.length })
   })
 
   ipcMain.handle(IpcChannels.sequencesRevealBat, async (_e, id: string) => {
     const sequences = await repo.listLaunchSequences()
     const sequence = sequences.find((s) => s.id === id)
-    if (!sequence?.batFilePath) throw new Error('No .bat file has been generated for this sequence yet.')
+    if (!sequence?.batFilePath) throw new Error('No launch script has been generated for this sequence yet.')
     shell.showItemInFolder(sequence.batFilePath)
   })
 }

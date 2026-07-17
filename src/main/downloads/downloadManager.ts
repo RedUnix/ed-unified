@@ -3,6 +3,7 @@ import { existsSync } from 'fs'
 import { basename, dirname, extname, join } from 'path'
 import { app, shell, type DownloadItem, type Session } from 'electron'
 import type { DownloadRecord } from '@shared/types'
+import { track } from '../analytics/analytics'
 
 /** Smoothing factor for the exponential moving average over speed samples. */
 const SPEED_EMA_ALPHA = 0.3
@@ -97,6 +98,7 @@ export class DownloadManager {
     }
     this.downloads.set(id, download)
     this.onEvent(record)
+    track('download_started')
 
     item.on('updated', (_e, state) => {
       record.receivedBytes = item.getReceivedBytes()
@@ -117,6 +119,9 @@ export class DownloadManager {
       record.bytesPerSecond = 0
       record.etaSeconds = null
       this.onEvent(record)
+      if (state === 'completed') {
+        track('download_completed', { launchWhenDone: record.launchWhenDone ? 1 : 0 })
+      }
       if (state === 'completed' && record.launchWhenDone) {
         void shell.openPath(record.savePath)
       }

@@ -4,6 +4,7 @@ import type { TabBounds } from '@shared/types'
 import type { WebContentsViewManager } from '../tabs/WebContentsViewManager'
 import type { OverlayManager } from '../overlay/OverlayManager'
 import { listBookmarks } from '../data/libraryRepository'
+import { track } from '../analytics/analytics'
 
 export function registerTabsIpc(
   tabsManager: WebContentsViewManager,
@@ -14,6 +15,7 @@ export function registerTabsIpc(
     const bookmark = bookmarks.find((b) => b.id === bookmarkId)
     if (!bookmark) throw new Error(`Bookmark not found: ${bookmarkId}`)
     await tabsManager.open(bookmark)
+    track('bookmark_opened')
   })
   ipcMain.handle(IpcChannels.tabsOpenUrl, async (_e, tabId: string, url: string) => {
     // Load failures are reported through the tabs:event channel ('load-failed');
@@ -43,6 +45,7 @@ export function registerTabsIpc(
   })
   ipcMain.handle(IpcChannels.tabsPinToOverlay, (_e, tabId: string, title: string) => {
     overlayManager.pin(tabId, title)
+    track('overlay_pinned')
   })
   ipcMain.handle(IpcChannels.tabsUnpinFromOverlay, (_e, tabId: string) => {
     overlayManager.unpin(tabId)

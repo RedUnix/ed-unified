@@ -1,7 +1,8 @@
 import { closeSync, existsSync, openSync, readdirSync, readSync, statSync } from 'fs'
 import { join } from 'path'
-import { homedir } from 'os'
 import { getSettings } from '../data/settingsStore'
+import { findJournalDir } from './edPaths'
+import { track } from '../analytics/analytics'
 import type { WebContentsViewManager } from '../tabs/WebContentsViewManager'
 
 const POLL_INTERVAL_MS = 2000
@@ -10,10 +11,6 @@ const JOURNAL_FILE = /^Journal\..*\.log$/
 let timer: NodeJS.Timeout | null = null
 let currentFile: string | null = null
 let readOffset = 0
-
-export function defaultJournalDir(): string {
-  return join(homedir(), 'Saved Games', 'Frontier Developments', 'Elite Dangerous')
-}
 
 function newestJournalFile(dir: string): string | null {
   try {
@@ -58,6 +55,7 @@ function handleJournalLine(line: string, tabsManager: WebContentsViewManager): v
   if (!command) return
 
   const url = command.urlTemplate.replaceAll('{arg}', encodeURIComponent(arg))
+  track('chat_command_used', { command: command.command })
   // Background tab: the user is in-game -- never steal focus from Elite.
   void tabsManager.openEphemeral(url, { background: true })
 }
@@ -70,7 +68,7 @@ function handleJournalLine(line: string, tabsManager: WebContentsViewManager): v
  */
 export function startJournalWatcher(tabsManager: WebContentsViewManager): void {
   if (timer) return
-  const dir = defaultJournalDir()
+  const dir = findJournalDir()
   if (!existsSync(dir)) {
     console.warn(`Journal watcher: folder not found, not watching: ${dir}`)
     return

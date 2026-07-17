@@ -9,8 +9,12 @@
 - **Tool update badges**: tools imported from EDCodex are checked against the EDCodex API on launch and every 6 hours. When an entry has been updated since you imported it, an "Update" badge appears on the card; clicking it opens the EDCodex page and clears the badge.
 - **Backup & restore** (Settings): export your whole library (bookmarks, tools, categories, launch sequences) plus settings to a single JSON file, and import it on any machine. Local file paths that don't exist on the target machine are dropped gracefully.
 - **In-game chat commands** (Settings, off by default): the app tails your Elite journal for local-chat messages like `!inara Sol` and opens the mapped page in a background tab without stealing focus from the game. `!inara` and `!edsm` ship as defaults; add your own command-to-URL mappings with an `{arg}` placeholder.
-- **Dynamic screenshot background** (Settings, off by default): every new Elite Dangerous screenshot automatically becomes the library background.
+- **Dynamic screenshot background** (Settings, off by default): every new Elite Dangerous screenshot automatically becomes the library background. The watched folder is configurable (defaults to the ED capture folder under Pictures).
+- The Launch Sequences and Downloads pages (and the blank new-tab page) now show your library background image too.
 - **Local webhook API** (Settings, off by default): a localhost-only HTTP server (default port 8425) lets VoiceAttack or scripts drive the app -- `GET /status`, `POST /open-bookmark`, `/open-url`, `/run-sequence`, `/refresh-tab`, `/show-library` (bookmarks and sequences match by id or name). See the README for examples.
+
+- **Anonymous usage analytics** via [Aptabase](https://aptabase.com): unique users, session time, crash reports, and feature-usage counts (no URLs, file paths, or names -- ever). Opt out any time in Settings via "Share anonymous usage statistics".
+- **Linux feature parity**: launch sequences now generate executable `.sh` scripts on Linux (`nohup` for tools, `xdg-open` for Steam/Epic URLs, `sleep` for delays) instead of being Windows-only; `window.prompt()` in embedded sites uses zenity/kdialog; auto-close-on-game-exit works with Proton (detects `EliteDangerous64.exe` through Wine's cmdline and matches native tool paths via /proc); and the journal/screenshot watchers look inside the game's Proton prefix (`steamapps/compatdata/359320`) as well as the native locations.
 
 ### Fixed
 

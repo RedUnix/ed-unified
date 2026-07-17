@@ -1,5 +1,6 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import { readFileSync, readdirSync, readlinkSync } from 'fs'
 import { getSettings } from '../data/settingsStore'
 import { listTools } from '../data/libraryRepository'
 
@@ -11,13 +12,15 @@ const GAME_PROCESS_NAMES = ['elitedangerous64.exe', 'elitedangerous32.exe']
 interface RunningProcess {
   pid: number
   executablePath: string
+  /** First cmdline argument; on Linux this is how Proton/Wine games are identified. */
+  commandPath: string
 }
 
 let timer: NodeJS.Timeout | null = null
 let gameWasRunning = false
 
-/** One CIM query returns every process with its full executable path. */
-async function listRunningProcesses(): Promise<RunningProcess[]> {
+/** One CIM query returns every Windows process with its full executable path. */
+async function listRunningProcessesWindows(): Promise<RunningProcess[]> {
   const { stdout } = await execFileAsync('powershell', [
     '-NoProfile',
     '-NonInteractive',
@@ -27,12 +30,51 @@ async function listRunningProcesses(): Promise<RunningProcess[]> {
   const parsed = JSON.parse(stdout) as Array<{ ProcessId: number; ExecutablePath: string | null }>
   return (Array.isArray(parsed) ? parsed : [parsed])
     .filter((p) => p.ExecutablePath)
-    .map((p) => ({ pid: p.ProcessId, executablePath: p.ExecutablePath as string }))
+    .map((p) => ({
+      pid: p.ProcessId,
+      executablePath: p.ExecutablePath as string,
+      commandPath: p.ExecutablePath as string
+    }))
+}
+
+/**
+ * /proc scan on Linux. The exe symlink covers native tools; the cmdline's
+ * first argument is what exposes Proton/Wine processes (their exe link points
+ * at wine-preloader, but argv[0] is the Windows .exe path).
+ */
+function listRunningProcessesLinux(): RunningProcess[] {
+  const processes: RunningProcess[] = []
+  for (const entry of readdirSync('/proc')) {
+    if (!/^\d+$/.test(entry)) continue
+    const pid = Number(entry)
+    let executablePath = ''
+    let commandPath = ''
+    try {
+      executablePath = readlinkSync(`/proc/${entry}/exe`)
+    } catch {
+      // Other users' processes -- exe unreadable; cmdline may still work.
+    }
+    try {
+      commandPath = readFileSync(`/proc/${entry}/cmdline`, 'utf-8').split('\0')[0] ?? ''
+    } catch {
+      // Process exited mid-scan.
+    }
+    if (executablePath || commandPath) processes.push({ pid, executablePath, commandPath })
+  }
+  return processes
+}
+
+async function listRunningProcesses(): Promise<RunningProcess[]> {
+  return process.platform === 'win32' ? listRunningProcessesWindows() : listRunningProcessesLinux()
 }
 
 function isGameProcess(proc: RunningProcess): boolean {
-  const exe = proc.executablePath.toLowerCase()
-  return GAME_PROCESS_NAMES.some((name) => exe.endsWith(`\\${name}`))
+  // Separator-agnostic: Proton cmdlines use Windows-style paths (Z:\...\EliteDangerous64.exe).
+  return GAME_PROCESS_NAMES.some(
+    (name) =>
+      proc.executablePath.toLowerCase().endsWith(name) ||
+      proc.commandPath.toLowerCase().endsWith(name)
+  )
 }
 
 /**
@@ -47,10 +89,17 @@ async function closeCompanionTools(processes: RunningProcess[]): Promise<void> {
     tools.map((t) => t.installedExePath?.toLowerCase()).filter((p): p is string => Boolean(p))
   )
   for (const proc of processes) {
-    if (!toolPaths.has(proc.executablePath.toLowerCase())) continue
+    const matches =
+      toolPaths.has(proc.executablePath.toLowerCase()) ||
+      toolPaths.has(proc.commandPath.toLowerCase())
+    if (!matches) continue
     try {
-      await execFileAsync('taskkill', ['/PID', String(proc.pid), '/T', '/F'])
-      console.log(`Auto-closed companion tool (pid ${proc.pid}): ${proc.executablePath}`)
+      if (process.platform === 'win32') {
+        await execFileAsync('taskkill', ['/PID', String(proc.pid), '/T', '/F'])
+      } else {
+        process.kill(proc.pid, 'SIGTERM')
+      }
+      console.log(`Auto-closed companion tool (pid ${proc.pid}): ${proc.executablePath || proc.commandPath}`)
     } catch {
       // Already exited, or access denied (e.g. elevated process) -- skip.
     }
@@ -77,7 +126,7 @@ async function poll(): Promise<void> {
 
 /** Watches for Elite Dangerous exiting; polls only do work while the setting is enabled. */
 export function startGameWatcher(): void {
-  if (process.platform !== 'win32' || timer) return
+  if ((process.platform !== 'win32' && process.platform !== 'linux') || timer) return
   timer = setInterval(() => void poll(), POLL_INTERVAL_MS)
 }
 

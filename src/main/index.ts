@@ -9,6 +9,7 @@ import {
 } from './protocol/protocolHandler'
 import { registerLocalFileSchemeAsPrivileged, registerLocalFileProtocolHandler } from './localFileProtocol'
 import { initServices } from './services'
+import { initAnalytics, track } from './analytics/analytics'
 import { IpcChannels } from '@shared/ipcChannels'
 import { createBookmark, findOrCreateCategoryByName, updateBookmark } from './data/libraryRepository'
 import { importToolFromEdcodexApi } from './edcodex/edcodexImporter'
@@ -42,6 +43,7 @@ async function handleBookmarkImport(payload: ProtocolImportPayload): Promise<voi
   }
 
   mainWindow.webContents.send(IpcChannels.protocolImport, record)
+  track('edcodex_bookmark_imported', { via: 'protocol' })
 }
 
 async function handleToolImport(payload: ProtocolToolImportPayload): Promise<void> {
@@ -49,6 +51,7 @@ async function handleToolImport(payload: ProtocolToolImportPayload): Promise<voi
   try {
     const result = await importToolFromEdcodexApi(payload.entryId, payload.icon)
     mainWindow.webContents.send(IpcChannels.protocolImportTool, result)
+    if (!result.alreadyExisted) track('edcodex_tool_imported', { via: 'protocol' })
   } catch (err) {
     // e.g. entry isn't Windows-platform, or both API and scrape fetches failed.
     console.error('EDCodex tool import failed:', err)
@@ -68,6 +71,7 @@ if (!gotLock) {
   app.quit()
 } else {
   registerProtocolClient()
+  void initAnalytics()
 
   app.on('second-instance', (_event, argv) => {
     if (mainWindow) {

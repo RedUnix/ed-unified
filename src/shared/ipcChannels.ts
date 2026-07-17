@@ -59,6 +59,8 @@ export const IpcChannels = {
   settingsSetThemeColors: 'settings:setThemeColors',
   settingsUpdate: 'settings:update',
   settingsChanged: 'settings:changed',
+  settingsPickScreenshotFolder: 'settings:pickScreenshotFolder',
+  settingsGetDefaultScreenshotFolder: 'settings:getDefaultScreenshotFolder',
 
   backupExport: 'backup:export',
   backupImport: 'backup:import',

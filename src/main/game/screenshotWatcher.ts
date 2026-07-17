@@ -1,9 +1,9 @@
 import { existsSync, statSync, watch, type FSWatcher } from 'fs'
 import { join } from 'path'
-import { homedir } from 'os'
 import { IpcChannels } from '@shared/ipcChannels'
 import type { BrowserWindow } from 'electron'
 import { getSettings, updateSettings } from '../data/settingsStore'
+import { findScreenshotDir } from './edPaths'
 
 const IMAGE_EXTENSIONS = /\.(bmp|png|jpe?g)$/i
 /** ED finishes writing high-res captures over a moment; wait before using the file. */
@@ -13,16 +13,17 @@ let watcher: FSWatcher | null = null
 let settleTimer: NodeJS.Timeout | null = null
 
 export function defaultScreenshotDir(): string {
-  return join(homedir(), 'Pictures', 'Frontier Developments', 'Elite Dangerous')
+  return findScreenshotDir()
 }
 
 /**
- * Watches the ED screenshot folder and promotes each new capture to the
- * library background (respecting the user's chosen opacity).
+ * Watches the screenshot folder (configurable in Settings, defaulting to the
+ * ED capture folder) and promotes each new capture to the library background
+ * (respecting the user's chosen opacity).
  */
 export function startScreenshotWatcher(window: BrowserWindow): void {
   if (watcher) return
-  const dir = defaultScreenshotDir()
+  const dir = getSettings().screenshotFolderPath ?? defaultScreenshotDir()
   if (!existsSync(dir)) {
     console.warn(`Screenshot watcher: folder not found, not watching: ${dir}`)
     return

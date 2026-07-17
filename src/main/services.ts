@@ -2,7 +2,7 @@ import type { BrowserWindow } from 'electron'
 import type { AppSettings } from '@shared/types'
 import { getSettings } from './data/settingsStore'
 import { startGameWatcher } from './game/gameWatcher'
-import { startScreenshotWatcher } from './game/screenshotWatcher'
+import { startScreenshotWatcher, stopScreenshotWatcher } from './game/screenshotWatcher'
 import { startJournalWatcher } from './game/journalWatcher'
 import { startToolUpdateChecks } from './edcodex/toolUpdateChecker'
 import { startWebhookServer, stopWebhookServer } from './webhook/webhookServer'
@@ -34,5 +34,11 @@ export function applySettingsSideEffects(
   if (webhookChanged) {
     stopWebhookServer()
     if (next.webhookEnabled) startWebhookServer(window, next.webhookPort)
+  }
+  // The fs watcher is bound to one directory; rebind when the folder changes
+  // (also picks up a folder that didn't exist at boot).
+  if (previous.screenshotFolderPath !== next.screenshotFolderPath) {
+    stopScreenshotWatcher()
+    startScreenshotWatcher(window)
   }
 }

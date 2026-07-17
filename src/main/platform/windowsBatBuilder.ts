@@ -1,13 +1,4 @@
-import { app } from 'electron'
-import { join } from 'path'
-import { mkdirSync, writeFileSync, existsSync, rmSync } from 'fs'
 import type { FilesystemToolRecord, LaunchSequenceRecord } from '@shared/types'
-
-function sequencesDir(): string {
-  const dir = join(app.getPath('userData'), 'sequences')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  return dir
-}
 
 export interface BuiltBatScript {
   script: string
@@ -62,28 +53,4 @@ export function buildBatScript(
   }
 
   return { script: lines.join('\r\n') + '\r\n', launchableCount, skippedCount }
-}
-
-/**
- * Writes the sequence's .bat file to userData/sequences/<id>.bat and returns the
- * path. Throws if every step was skipped, so callers see a clear error instead of
- * a silently-generated no-op script.
- */
-export function writeBatFile(sequence: LaunchSequenceRecord, tools: FilesystemToolRecord[]): string {
-  const built = buildBatScript(sequence, tools)
-  if (built.launchableCount === 0) {
-    throw new Error(
-      'None of the steps in this sequence can be launched yet. For tool steps, open the tool in your Library and set its program via "Locate Program" first.'
-    )
-  }
-  const filePath = join(sequencesDir(), `${sequence.id}.bat`)
-  // Plain UTF-8, no BOM: writeFileSync doesn't add one by default, and cmd.exe on
-  // older Windows versions can choke on BOM-prefixed .bat files.
-  writeFileSync(filePath, built.script, 'utf-8')
-  return filePath
-}
-
-export function deleteBatFile(batFilePath: string | undefined): void {
-  if (!batFilePath) return
-  rmSync(batFilePath, { force: true })
 }

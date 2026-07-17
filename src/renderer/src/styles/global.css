@@ -460,15 +460,6 @@ textarea {
   justify-content: center;
 }
 
-.new-tab-page__background {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-size: cover;
-  background-position: center;
-  pointer-events: none;
-}
-
 .new-tab-page__hint {
   color: var(--text-faint);
   font-size: 13px;
@@ -742,6 +733,9 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* Hosts the PanelBackground layer; same containment trick as .library-grid. */
+  position: relative;
+  isolation: isolate;
 }
 
 .download-row {
@@ -1026,4 +1020,22 @@ textarea {
 .error-text {
   color: var(--danger);
   font-size: 12px;
+}
+
+.settings-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-folder-row__path {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl; /* ellipsis at the start so the deepest folder stays visible */
+  text-align: left;
 }

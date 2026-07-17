@@ -115,6 +115,10 @@ const api = {
       ipcRenderer.invoke(IpcChannels.settingsSetThemeColors, colors),
     update: (patch: Partial<AppSettings>): Promise<AppSettings> =>
       ipcRenderer.invoke(IpcChannels.settingsUpdate, patch),
+    pickScreenshotFolder: (): Promise<string | null> =>
+      ipcRenderer.invoke(IpcChannels.settingsPickScreenshotFolder),
+    getDefaultScreenshotFolder: (): Promise<string> =>
+      ipcRenderer.invoke(IpcChannels.settingsGetDefaultScreenshotFolder),
     onChanged: (cb: (settings: AppSettings) => void): (() => void) => {
       const listener = (_e: unknown, settings: AppSettings): void => cb(settings)
       ipcRenderer.on(IpcChannels.settingsChanged, listener)

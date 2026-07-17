@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { AppSettings, ChatCommandRecord, ImportSummary, ThemeColors, UpdateCheckResult } from '@shared/types'
 import { applyThemeColors } from '../utils/applyThemeColors'
 import { useLibrary } from '../state/libraryStore'
@@ -23,9 +23,15 @@ export default function AppSettingsControl({ settings, onSettingsChange }: AppSe
   const [updateCheck, setUpdateCheck] = useState<UpdateCheckResult | null>(null)
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [backupStatus, setBackupStatus] = useState<string | null>(null)
+  const [defaultScreenshotFolder, setDefaultScreenshotFolder] = useState('')
+
+  useEffect(() => {
+    void window.edToolApp.settings.getDefaultScreenshotFolder().then(setDefaultScreenshotFolder)
+  }, [])
 
   const colors = { ...DEFAULT_COLORS, ...settings?.themeColors }
   const chatCommands = settings?.chatCommands ?? []
+  const screenshotFolder = settings?.screenshotFolderPath ?? defaultScreenshotFolder
 
   async function patchSettings(patch: Partial<AppSettings>): Promise<void> {
     const updated = await window.edToolApp.settings.update(patch)
@@ -210,6 +216,38 @@ export default function AppSettingsControl({ settings, onSettingsChange }: AppSe
                 />
                 <span>Newest ED screenshot becomes library background</span>
               </label>
+              {settings?.screenshotBackgroundEnabled && (
+                <div className="settings-folder-row">
+                  <span className="settings-folder-row__path" title={screenshotFolder}>
+                    {screenshotFolder}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() =>
+                      void window.edToolApp.settings.pickScreenshotFolder().then((path) => {
+                        if (path) void patchSettings({ screenshotFolderPath: path })
+                      })
+                    }
+                  >
+                    Change...
+                  </button>
+                  {settings?.screenshotFolderPath && (
+                    <button
+                      type="button"
+                      className="btn"
+                      title="Use the default Elite Dangerous screenshot folder"
+                      onClick={() =>
+                        void patchSettings({
+                          screenshotFolderPath: null as unknown as undefined
+                        })
+                      }
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
                   type="checkbox"
@@ -293,6 +331,15 @@ export default function AppSettingsControl({ settings, onSettingsChange }: AppSe
                 </label>
               )}
             </div>
+
+            <label className="field" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={settings?.analyticsEnabled ?? true}
+                onChange={(e) => void patchSettings({ analyticsEnabled: e.target.checked })}
+              />
+              <span>Share anonymous usage statistics (no URLs, paths, or names)</span>
+            </label>
 
             <div className="field">
               <label>Backup</label>

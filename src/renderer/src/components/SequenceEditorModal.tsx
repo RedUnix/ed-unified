@@ -276,7 +276,7 @@ export default function SequenceEditorModal({ sequence, onClose }: SequenceEdito
                 onClick={() => void handleGenerateBat()}
                 disabled={busyAction !== null}
               >
-                {busyAction === 'generate' ? 'Generating...' : 'Generate .bat'}
+                {busyAction === 'generate' ? 'Generating...' : 'Generate Launch Script'}
               </button>
               <button
                 type="button"

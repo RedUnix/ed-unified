@@ -2,6 +2,7 @@ import { spawn } from 'child_process'
 import { shell } from 'electron'
 import { launchPath as launchPathWindows } from './windowsLauncher'
 import { showNativePrompt as showNativePromptWindows } from './windowsPrompt'
+import { showNativePrompt as showNativePromptLinux } from './linuxPrompt'
 
 /**
  * Fire-and-forget launch of a local program or custom-protocol URL. Windows
@@ -22,10 +23,13 @@ export function launchPath(path: string): void {
   child.unref()
 }
 
-/** Only Windows has a native prompt implementation; see WebContentsViewManager's window.prompt() override. */
+/** Native text-input dialog for the window.prompt() override; see WebContentsViewManager. */
 export function showNativePrompt(message: string, defaultValue: string): string | null {
   if (process.platform === 'win32') {
     return showNativePromptWindows(message, defaultValue)
+  }
+  if (process.platform === 'linux') {
+    return showNativePromptLinux(message, defaultValue)
   }
   return null
 }
