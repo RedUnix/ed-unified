@@ -23,6 +23,9 @@ export function registerTabsIpc(
     await tabsManager.openUrlInTab(tabId, url).catch(() => {})
   })
   ipcMain.handle(IpcChannels.tabsClose, (_e, bookmarkId: string) => {
+    // A pinned tab's view lives in an overlay window; unpin first so the
+    // always-on-top window is destroyed instead of orphaned around a dead view.
+    if (tabsManager.isPinned(bookmarkId)) overlayManager.unpin(bookmarkId)
     tabsManager.close(bookmarkId)
   })
   ipcMain.handle(IpcChannels.tabsFocus, (_e, bookmarkId: string) => {
@@ -44,8 +47,9 @@ export function registerTabsIpc(
     tabsManager.reload(tabId)
   })
   ipcMain.handle(IpcChannels.tabsPinToOverlay, (_e, tabId: string, title: string) => {
-    overlayManager.pin(tabId, title)
-    track('overlay_pinned')
+    const pinned = overlayManager.pin(tabId, title)
+    if (pinned) track('overlay_pinned')
+    return pinned
   })
   ipcMain.handle(IpcChannels.tabsUnpinFromOverlay, (_e, tabId: string) => {
     overlayManager.unpin(tabId)

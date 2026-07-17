@@ -173,11 +173,14 @@ function AppShell() {
     [openTabs]
   )
 
-  const pinActiveTab = useCallback(() => {
+  const pinActiveTab = useCallback(async () => {
     if (!activeTabId) return
     const tab = openTabs.find((t) => t.id === activeTabId)
     const label = tab ? tabTitles[tab.id] ?? tabUrls[tab.id] ?? tab.url : 'Pinned tab'
-    void window.edToolApp.tabs.pinToOverlay(activeTabId, label || 'Pinned tab')
+    // Pinning fails (returns false) when the tab has no native view yet, e.g.
+    // a never-navigated URL-bar tab -- stay put instead of navigating away.
+    const pinned = await window.edToolApp.tabs.pinToOverlay(activeTabId, label || 'Pinned tab')
+    if (!pinned) return
     // The view now lives in the overlay window; fall back to the library here.
     setActiveTabId(null)
     setSection('library')
@@ -352,6 +355,7 @@ function AppShell() {
   const tabStripTabs = openTabs.map((t) => ({ id: t.id, label: tabLabel(t) }))
   const activeBookmark = library.bookmarks.find((b) => b.id === activeTabId)
   const activeTab = openTabs.find((t) => t.id === activeTabId)
+  const canPinActiveTab = Boolean(activeTab && !(activeTab.kind === 'browse' && !activeTab.loaded))
   const showingTab = section === 'tab' && activeTabId !== null
   const activeNavState = activeTabId ? navState[activeTabId] : undefined
 
@@ -436,7 +440,8 @@ function AppShell() {
           onFocus={focusTab}
           onClose={closeTab}
           onNewTab={openNewTab}
-          onPinActiveTab={pinActiveTab}
+          onPinActiveTab={() => void pinActiveTab()}
+          canPinActiveTab={canPinActiveTab}
           onGoBack={goBack}
           onGoForward={goForward}
           onToggleThemePanel={toggleThemePanel}
