@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { LaunchSequenceRecord } from '@shared/types'
 import { useLibrary } from '../state/libraryStore'
 import SequenceEditorModal from './SequenceEditorModal'
+import PanelBackground from './PanelBackground'
 
 type ModalTarget = 'new' | LaunchSequenceRecord | null
 
@@ -21,6 +22,7 @@ export default function SequencesPanel() {
 
   return (
     <div className="library-grid">
+      <PanelBackground />
       <div className="library-grid__toolbar">
         <div className="library-grid__title">Launch Sequences</div>
         <div className="library-grid__actions">

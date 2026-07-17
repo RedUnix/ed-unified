@@ -11,9 +11,14 @@ Browse and bookmark EDCodex tools, launch filesystem programs, chain everything 
 - **Find in page** -- Ctrl+F opens a find bar on any website tab, with match counts and previous/next navigation.
 - **Download manager** -- downloads from embedded sites are tracked in a Downloads panel with progress, speed, ETA, and destination folder, plus an optional "Launch when done" that runs the file (e.g. an installer) as soon as it finishes.
 - **One-click EDCodex import** -- paste an EDCodex tool URL, or click "Add to ED Unified" directly on an EDCodex tool page while browsing it inside the app, and the name, description, categories, and icon all come across automatically. Works for web apps (imported as bookmarks) and Windows tools (imported as filesystem tools via the EDCodex API, with a guided download-and-link flow).
-- **Launch sequences** -- chain a game launch (Steam/Epic/direct) with companion tools and custom delays, then generate a `.bat` file or run it straight from the app (`.bat` generation is Windows-only).
+- **Launch sequences** -- chain a game launch (Steam/Epic/direct) with companion tools and custom delays, then generate a launch script (`.bat` on Windows, `.sh` on Linux) or run it straight from the app.
 - **Auto dark theming** -- per-site brightness/contrast/sepia controls with a smart auto-invert for bright pages, plus legacy one-click presets.
 - **Custom library background** -- set your own background image with adjustable opacity behind the library grid.
+- **Game overlay** -- pin any tab as a floating always-on-top window (with opacity control) over Elite in borderless-windowed mode.
+- **Game-aware automation** -- optionally auto-close companion tools when the game exits, trigger pages from in-game chat commands (`!inara Sol`), and set each new ED screenshot as the library background.
+- **Tool update badges** -- tools imported from EDCodex get an update badge when a newer version is listed.
+- **Backup & restore** -- export/import your entire library and settings as one JSON file.
+- **Local webhook API** -- drive the app from VoiceAttack or scripts over localhost (see below).
 - **Built-in ad/tracker blocking** for embedded tabs.
 - **Fully customizable theme colors** and a collapsible sidebar.
 - **Fullscreen/borderless mode** for a clean, distraction-free layout.
@@ -68,9 +73,24 @@ npm run build:linux    # build the Linux AppImage (release/)
 
 > Note: `build:linux` must run on Linux (AppImage assembly creates symlinks, which Windows blocks without elevation or Developer Mode). Pushing a `v*` tag builds both installers via GitHub Actions and attaches them to a draft release.
 
+## Webhook API
+
+Enable it in Settings (off by default; binds to `127.0.0.1` only, default port `8425`). Bookmarks and sequences match by id or name.
+
+```sh
+curl http://127.0.0.1:8425/status
+curl -X POST http://127.0.0.1:8425/open-bookmark -d "{\"name\": \"INARA\"}"
+curl -X POST http://127.0.0.1:8425/open-url -d "{\"url\": \"https://coriolis.io\"}"
+curl -X POST http://127.0.0.1:8425/run-sequence -d "{\"name\": \"Full Stack\"}"
+curl -X POST http://127.0.0.1:8425/refresh-tab
+curl -X POST http://127.0.0.1:8425/show-library
+```
+
 ## Tech Stack
 
-Electron, React, TypeScript, and [lowdb](https://github.com/typicode/lowdb) for local storage -- no backend, no account, no telemetry. All data lives on your machine.
+Electron, React, TypeScript, and [lowdb](https://github.com/typicode/lowdb) for local storage -- no backend, no account. All your data (bookmarks, tools, sequences, settings) lives on your machine.
+
+The app sends **anonymous usage statistics** via [Aptabase](https://aptabase.com) (a privacy-first analytics service): app opened/closed, feature usage counts, and crash reports. No URLs, file paths, tool names, or any personal data are ever included, and you can turn it off in Settings ("Share anonymous usage statistics").
 
 ## License
 

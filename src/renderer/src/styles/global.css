@@ -269,6 +269,11 @@ textarea {
   height: 24px;
   line-height: 1;
   font-size: 14px;
+  /* Centers both text glyphs and svg icons (emoji/svg otherwise sit off-center). */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .tab-nav-controls__btn:hover:not(:disabled) {
@@ -326,6 +331,14 @@ textarea {
   border-color: var(--accent);
   color: var(--accent-strong);
   background: var(--accent-dim);
+}
+
+/* Sits right of the pin button (which carries the margin-left:auto). */
+.tab-strip__pin-toggle {
+  margin-right: 6px;
+  align-self: center;
+  flex-shrink: 0;
+  font-size: 16px;
 }
 
 .tab-strip__copied-bubble {
@@ -445,15 +458,6 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.new-tab-page__background {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-size: cover;
-  background-position: center;
-  pointer-events: none;
 }
 
 .new-tab-page__hint {
@@ -662,6 +666,24 @@ textarea {
   color: var(--accent-strong);
 }
 
+.card__update-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: var(--accent);
+  border: none;
+  color: #1a1108;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 9px;
+}
+
+.card__update-badge:hover {
+  background: var(--accent-strong);
+}
+
 .card__description {
   color: var(--text-secondary);
   font-size: 12px;
@@ -711,6 +733,9 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* Hosts the PanelBackground layer; same containment trick as .library-grid. */
+  position: relative;
+  isolation: isolate;
 }
 
 .download-row {
@@ -850,6 +875,8 @@ textarea {
   padding: 20px;
   width: 420px;
   max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -896,6 +923,28 @@ textarea {
   padding: 0;
   border: none;
   background: none;
+}
+
+.field input[type='color'] {
+  /* Same class of bug as range inputs: the generic .field input padding +
+     dark background squeezed the swatch into a sliver, hiding the selected
+     color entirely. */
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  background: none;
+  width: 36px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.field input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.field input[type='color']::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
 }
 
 .field input:focus,
@@ -971,4 +1020,22 @@ textarea {
 .error-text {
   color: var(--danger);
   font-size: 12px;
+}
+
+.settings-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-folder-row__path {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl; /* ellipsis at the start so the deepest folder stays visible */
+  text-align: left;
 }

@@ -10,6 +10,7 @@ import {
   updateTool
 } from '../data/libraryRepository'
 import { downloadIcon } from '../icons/iconDownloader'
+import { track } from '../analytics/analytics'
 
 export async function importFromEdcodexUrl(
   edcodexUrl: string
@@ -39,6 +40,7 @@ export async function importFromEdcodexUrl(
   const iconLocalPath = parsed.iconUrl ? await downloadIcon(parsed.iconUrl) : undefined
   const description = parsed.shortDescription ?? parsed.longDescriptionText
 
+  track('edcodex_imported', { kind: isNativeApp(parsed) ? 'tool' : 'bookmark', via: 'url' })
   if (isNativeApp(parsed)) {
     const record = await createTool({
       name: parsed.name,
@@ -74,6 +76,7 @@ interface EdcodexApiEntry {
   SHORT_DESC?: string
   LONG_DESC?: string
   PLATFORM_LST?: string
+  DATE_UPDATE?: string
   cats?: Array<{ NAME?: string }>
   links?: EdcodexApiLink[]
 }
@@ -142,6 +145,13 @@ export async function importToolFromEdcodexApi(
     categoryIds,
     source: { type: 'edcodex-import', edcodexEntryId: entryId, edcodexUrl }
   })
+  // Baseline for the periodic update checker (see toolUpdateChecker.ts).
+  if (entry.DATE_UPDATE) {
+    record = await updateTool(record.id, {
+      edcodexDateUpdate: entry.DATE_UPDATE,
+      edcodexLatestDateUpdate: entry.DATE_UPDATE
+    })
+  }
 
   if (iconUrl) {
     const iconLocalPath = await downloadIcon(iconUrl)

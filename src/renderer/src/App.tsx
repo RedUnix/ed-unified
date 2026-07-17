@@ -27,6 +27,8 @@ interface OpenTab {
   kind: 'bookmark' | 'browse'
   /** False until the tab's first navigation -- the new-tab page shows until then. */
   loaded: boolean
+  /** True while the tab floats in an always-on-top overlay window. */
+  pinned?: boolean
 }
 
 type Section = 'library' | 'tab' | 'sequences' | 'downloads'
@@ -110,9 +112,16 @@ function AppShell() {
             ? prev
             : [...prev, { id: event.tabId, url: event.url, kind: 'browse', loaded: true }]
         )
-        setActiveTabId(event.tabId)
-        setSection('tab')
-        setFindOpen(false)
+        // Background tabs (journal chat commands) join the strip silently.
+        if (!event.background) {
+          setActiveTabId(event.tabId)
+          setSection('tab')
+          setFindOpen(false)
+        }
+      } else if (event.type === 'overlay-changed') {
+        setOpenTabs((prev) =>
+          prev.map((t) => (t.id === event.tabId ? { ...t, pinned: event.pinned } : t))
+        )
       } else if (event.type === 'title-updated') {
         setTabTitles((prev) => ({ ...prev, [event.tabId]: event.title }))
       } else if (event.type === 'nav-state') {
@@ -147,10 +156,12 @@ function AppShell() {
 
   const focusTab = useCallback(
     async (id: string) => {
+      const tab = openTabs.find((t) => t.id === id)
+      // Clicking a pinned tab pulls it back out of its overlay window first.
+      if (tab?.pinned) await window.edToolApp.tabs.unpinFromOverlay(id)
       setActiveTabId(id)
       setSection('tab')
       setFindOpen(false)
-      const tab = openTabs.find((t) => t.id === id)
       // A never-navigated browse tab has no native view to focus -- hide the
       // current one so the DOM new-tab page underneath becomes visible.
       if (tab && tab.kind === 'browse' && !tab.loaded) {
@@ -162,6 +173,17 @@ function AppShell() {
     [openTabs]
   )
 
+  const pinActiveTab = useCallback(() => {
+    if (!activeTabId) return
+    const tab = openTabs.find((t) => t.id === activeTabId)
+    const label = tab ? tabTitles[tab.id] ?? tabUrls[tab.id] ?? tab.url : 'Pinned tab'
+    void window.edToolApp.tabs.pinToOverlay(activeTabId, label || 'Pinned tab')
+    // The view now lives in the overlay window; fall back to the library here.
+    setActiveTabId(null)
+    setSection('library')
+    setFindOpen(false)
+  }, [activeTabId, openTabs, tabTitles, tabUrls])
+
   const openUrlInNewTab = useCallback((url: string) => {
     const id = crypto.randomUUID()
     setOpenTabs((prev) => [...prev, { id, url, kind: 'browse', loaded: true }])
@@ -170,6 +192,14 @@ function AppShell() {
     setFindOpen(false)
     void window.edToolApp.tabs.openUrl(id, url)
   }, [])
+
+  // EDCodex tool-update polling flags new versions in main; just re-fetch.
+  useEffect(() => {
+    const unsubscribe = window.edToolApp.toolUpdates.onChanged(() => {
+      void library.refresh()
+    })
+    return unsubscribe
+  }, [library.refresh])
 
   // A tool arrived via edtoolapp://import-tool (EDCodex page button). Jump to
   // the library so the new card -- and the DOM modal, which a native tab view
@@ -258,6 +288,25 @@ function AppShell() {
     void window.edToolApp.tabs.hideAll()
   }, [])
 
+  // Commands arriving over the local webhook API resolve through the same
+  // handlers user clicks use, so state stays consistent.
+  useEffect(() => {
+    const unsubscribe = window.edToolApp.onWebhookCommand((command) => {
+      if (command.type === 'open-bookmark' && command.id) {
+        void openBookmark(command.id)
+      } else if (command.type === 'open-url' && command.url) {
+        openUrlInNewTab(command.url)
+      } else if (command.type === 'run-sequence' && command.id) {
+        void window.edToolApp.sequences.runNow(command.id)
+      } else if (command.type === 'refresh-tab') {
+        if (activeTabId) void window.edToolApp.tabs.reload(activeTabId)
+      } else if (command.type === 'show-library') {
+        showLibrary()
+      }
+    })
+    return unsubscribe
+  }, [activeTabId, openBookmark, openUrlInNewTab, showLibrary])
+
   const handleToolAction = useCallback(
     async (tool: FilesystemToolRecord) => {
       if (tool.installedExePath) {
@@ -292,11 +341,12 @@ function AppShell() {
   )
 
   function tabLabel(tab: OpenTab): string {
+    const prefix = tab.pinned ? '\u{1F4CC} ' : ''
     if (tab.kind === 'bookmark') {
       const bookmark = library.bookmarks.find((b) => b.id === tab.id)
-      if (bookmark) return bookmark.name
+      if (bookmark) return prefix + bookmark.name
     }
-    return tabTitles[tab.id] ?? (tabUrls[tab.id] || tab.url || 'New Tab')
+    return prefix + (tabTitles[tab.id] ?? (tabUrls[tab.id] || tab.url || 'New Tab'))
   }
 
   const tabStripTabs = openTabs.map((t) => ({ id: t.id, label: tabLabel(t) }))
@@ -386,13 +436,18 @@ function AppShell() {
           onFocus={focusTab}
           onClose={closeTab}
           onNewTab={openNewTab}
+          onPinActiveTab={pinActiveTab}
           onGoBack={goBack}
           onGoForward={goForward}
           onToggleThemePanel={toggleThemePanel}
         />
         <div className="content-area">
           {section === 'library' && (
-            <LibraryGrid onOpenBookmark={openBookmark} onToolAction={handleToolAction} />
+            <LibraryGrid
+              onOpenBookmark={openBookmark}
+              onToolAction={handleToolAction}
+              onOpenUrl={openUrlInNewTab}
+            />
           )}
           {section === 'sequences' && <SequencesPanel />}
           {section === 'downloads' && (

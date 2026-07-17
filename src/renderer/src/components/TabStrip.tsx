@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import TabNavControls from './TabNavControls'
+import { ThumbtackIcon } from './icons'
 
 interface TabDescriptor {
   id: string
@@ -16,6 +17,7 @@ interface TabStripProps {
   onFocus: (id: string) => void
   onClose: (id: string) => void
   onNewTab: () => void
+  onPinActiveTab: () => void
   onGoBack: () => void
   onGoForward: () => void
   onToggleThemePanel: () => void
@@ -31,6 +33,7 @@ export default function TabStrip({
   onFocus,
   onClose,
   onNewTab,
+  onPinActiveTab,
   onGoBack,
   onGoForward,
   onToggleThemePanel
@@ -93,17 +96,26 @@ export default function TabStrip({
         +
       </button>
       {showingTab && (
-        <button
-          className={
-            themePanelOpen
-              ? 'tab-nav-controls__btn tab-strip__theme-toggle tab-strip__theme-toggle--active'
-              : 'tab-nav-controls__btn tab-strip__theme-toggle'
-          }
-          onClick={onToggleThemePanel}
-          title="Theme"
-        >
-          &#9681;
-        </button>
+        <>
+          <button
+            className="tab-nav-controls__btn tab-strip__theme-toggle"
+            onClick={onPinActiveTab}
+            title="Pin as game overlay (always on top)"
+          >
+            <ThumbtackIcon />
+          </button>
+          <button
+            className={
+              themePanelOpen
+                ? 'tab-nav-controls__btn tab-strip__pin-toggle tab-strip__theme-toggle--active'
+                : 'tab-nav-controls__btn tab-strip__pin-toggle'
+            }
+            onClick={onToggleThemePanel}
+            title="Theme"
+          >
+            &#9681;
+          </button>
+        </>
       )}
       {copiedBubble && (
         <span

@@ -2,14 +2,20 @@ import { clipboard, ipcMain } from 'electron'
 import { IpcChannels } from '@shared/ipcChannels'
 import type { TabBounds } from '@shared/types'
 import type { WebContentsViewManager } from '../tabs/WebContentsViewManager'
+import type { OverlayManager } from '../overlay/OverlayManager'
 import { listBookmarks } from '../data/libraryRepository'
+import { track } from '../analytics/analytics'
 
-export function registerTabsIpc(tabsManager: WebContentsViewManager): void {
+export function registerTabsIpc(
+  tabsManager: WebContentsViewManager,
+  overlayManager: OverlayManager
+): void {
   ipcMain.handle(IpcChannels.tabsOpen, async (_e, bookmarkId: string) => {
     const bookmarks = await listBookmarks()
     const bookmark = bookmarks.find((b) => b.id === bookmarkId)
     if (!bookmark) throw new Error(`Bookmark not found: ${bookmarkId}`)
     await tabsManager.open(bookmark)
+    track('bookmark_opened')
   })
   ipcMain.handle(IpcChannels.tabsOpenUrl, async (_e, tabId: string, url: string) => {
     // Load failures are reported through the tabs:event channel ('load-failed');
@@ -33,6 +39,19 @@ export function registerTabsIpc(tabsManager: WebContentsViewManager): void {
   })
   ipcMain.handle(IpcChannels.tabsGoForward, (_e, tabId: string) => {
     tabsManager.goForward(tabId)
+  })
+  ipcMain.handle(IpcChannels.tabsReload, (_e, tabId: string) => {
+    tabsManager.reload(tabId)
+  })
+  ipcMain.handle(IpcChannels.tabsPinToOverlay, (_e, tabId: string, title: string) => {
+    overlayManager.pin(tabId, title)
+    track('overlay_pinned')
+  })
+  ipcMain.handle(IpcChannels.tabsUnpinFromOverlay, (_e, tabId: string) => {
+    overlayManager.unpin(tabId)
+  })
+  ipcMain.handle(IpcChannels.overlaySetOpacity, (_e, tabId: string, opacity: number) => {
+    overlayManager.setOpacity(tabId, opacity)
   })
   ipcMain.handle(IpcChannels.tabsCopyUrl, (_e, tabId: string) => {
     const url = tabsManager.getUrl(tabId)

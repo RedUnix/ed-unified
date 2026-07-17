@@ -1,0 +1,63 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+.overlay-bar {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--accent);
+  font-family: var(--font-family);
+  /* The whole bar drags the window; interactive controls opt back out. */
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.overlay-bar__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.overlay-bar__opacity {
+  -webkit-app-region: no-drag;
+  width: 90px;
+  accent-color: var(--accent);
+}
+
+.overlay-bar__btn {
+  -webkit-app-region: no-drag;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.overlay-bar__btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}

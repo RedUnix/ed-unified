@@ -36,6 +36,10 @@ export const IpcChannels = {
   tabsSetBounds: 'tabs:setBounds',
   tabsGoBack: 'tabs:goBack',
   tabsGoForward: 'tabs:goForward',
+  tabsReload: 'tabs:reload',
+  tabsPinToOverlay: 'tabs:pinToOverlay',
+  tabsUnpinFromOverlay: 'tabs:unpinFromOverlay',
+  overlaySetOpacity: 'overlay:setOpacity',
   tabsEvent: 'tabs:event',
   tabsCopyUrl: 'tabs:copyUrl',
   tabsJsDialog: 'tabs:jsDialog',
@@ -53,6 +57,19 @@ export const IpcChannels = {
   settingsSetLibraryBackgroundOpacity: 'settings:setLibraryBackgroundOpacity',
   settingsSetAdblockEnabled: 'settings:setAdblockEnabled',
   settingsSetThemeColors: 'settings:setThemeColors',
+  settingsUpdate: 'settings:update',
+  settingsChanged: 'settings:changed',
+  settingsPickScreenshotFolder: 'settings:pickScreenshotFolder',
+  settingsGetDefaultScreenshotFolder: 'settings:getDefaultScreenshotFolder',
+
+  backupExport: 'backup:export',
+  backupImport: 'backup:import',
+
+  toolUpdatesCheckNow: 'toolUpdates:checkNow',
+  toolUpdatesAcknowledge: 'toolUpdates:acknowledge',
+  toolUpdatesChanged: 'toolUpdates:changed',
+
+  webhookCommand: 'webhook:command',
 
   windowToggleFullscreen: 'window:toggleFullscreen',
   windowIsFullscreen: 'window:isFullscreen',

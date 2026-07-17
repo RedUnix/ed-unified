@@ -1,4 +1,5 @@
 import type { DownloadRecord } from '@shared/types'
+import PanelBackground from './PanelBackground'
 
 interface DownloadsPanelProps {
   downloads: DownloadRecord[]
@@ -31,6 +32,7 @@ export default function DownloadsPanel({ downloads, onClearFinished }: Downloads
 
   return (
     <div className="downloads-panel">
+      <PanelBackground />
       <div className="library-grid__toolbar">
         <div className="library-grid__title">Downloads</div>
         <div className="library-grid__actions">

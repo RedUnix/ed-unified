@@ -6,7 +6,17 @@ import type { AppSettings } from '@shared/types'
 const DEFAULT_SETTINGS: AppSettings = {
   shellThemeId: 'default',
   libraryBackgroundOpacity: 0.35,
-  adblockEnabled: true
+  adblockEnabled: true,
+  autoCloseToolsOnGameExit: false,
+  screenshotBackgroundEnabled: false,
+  webhookEnabled: false,
+  webhookPort: 8425,
+  chatCommandsEnabled: false,
+  chatCommands: [
+    { command: 'inara', urlTemplate: 'https://inara.cz/elite/starsystem/?search={arg}' },
+    { command: 'edsm', urlTemplate: 'https://www.edsm.net/en/system?systemName={arg}' }
+  ],
+  analyticsEnabled: true
 }
 
 function settingsPath(): string {

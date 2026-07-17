@@ -1,7 +1,9 @@
 import type { BrowserWindow } from 'electron'
 import type { WebContentsViewManager } from '../tabs/WebContentsViewManager'
 import type { DownloadManager } from '../downloads/downloadManager'
+import type { OverlayManager } from '../overlay/OverlayManager'
 import { registerDownloadsIpc } from './downloadsIpc'
+import { registerToolUpdatesIpc } from './toolUpdatesIpc'
 import { registerBookmarksIpc } from './bookmarksIpc'
 import { registerToolsIpc } from './toolsIpc'
 import { registerCategoriesIpc } from './categoriesIpc'
@@ -16,17 +18,19 @@ import { registerUpdatesIpc } from './updatesIpc'
 export function registerIpc(
   window: BrowserWindow,
   tabsManager: WebContentsViewManager,
-  downloadManager: DownloadManager
+  downloadManager: DownloadManager,
+  overlayManager: OverlayManager
 ): void {
   registerBookmarksIpc()
   registerToolsIpc(window)
   registerCategoriesIpc()
   registerSequencesIpc()
-  registerTabsIpc(tabsManager)
+  registerTabsIpc(tabsManager, overlayManager)
   registerThemingIpc(tabsManager)
-  registerSettingsIpc()
+  registerSettingsIpc(window)
   registerWindowIpc(window)
   registerLibraryIpc()
   registerUpdatesIpc()
   registerDownloadsIpc(downloadManager)
+  registerToolUpdatesIpc()
 }

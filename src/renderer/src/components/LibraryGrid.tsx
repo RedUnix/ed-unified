@@ -12,6 +12,7 @@ import { applyThemeColors } from '../utils/applyThemeColors'
 interface LibraryGridProps {
   onOpenBookmark: (id: string) => void
   onToolAction: (tool: FilesystemToolRecord) => void
+  onOpenUrl: (url: string) => void
 }
 
 type BookmarkModalTarget = 'new' | BookmarkRecord | null
@@ -20,8 +21,8 @@ type KindFilter = 'all' | 'website' | 'filesystem-tool'
 
 type GridItem = { kind: 'website'; record: BookmarkRecord } | { kind: 'filesystem-tool'; record: FilesystemToolRecord }
 
-export default function LibraryGrid({ onOpenBookmark, onToolAction }: LibraryGridProps) {
-  const { bookmarks, tools, categories, reorderLibraryItems, loading } = useLibrary()
+export default function LibraryGrid({ onOpenBookmark, onToolAction, onOpenUrl }: LibraryGridProps) {
+  const { bookmarks, tools, categories, reorderLibraryItems, loading, refresh } = useLibrary()
   const [edcodexModalOpen, setEdcodexModalOpen] = useState(false)
   const [bookmarkModalTarget, setBookmarkModalTarget] = useState<BookmarkModalTarget>(null)
   const [toolModalTarget, setToolModalTarget] = useState<ToolModalTarget>(null)
@@ -36,7 +37,17 @@ export default function LibraryGrid({ onOpenBookmark, onToolAction }: LibraryGri
       setSettings(s)
       applyThemeColors(s.themeColors)
     })
+    // Main-initiated changes (e.g. the screenshot watcher swapping the
+    // background) stream in over settings:changed.
+    const unsubscribe = window.edToolApp.settings.onChanged(setSettings)
+    return unsubscribe
   }, [])
+
+  async function handleToolUpdateBadge(tool: FilesystemToolRecord): Promise<void> {
+    if (tool.source.edcodexUrl) onOpenUrl(tool.source.edcodexUrl)
+    await window.edToolApp.toolUpdates.acknowledge(tool.id)
+    await refresh()
+  }
 
   function handleSettingsChange(updated: AppSettings): void {
     setSettings(updated)
@@ -216,6 +227,15 @@ export default function LibraryGrid({ onOpenBookmark, onToolAction }: LibraryGri
                   siteUrl={item.kind === 'website' ? item.record.url : undefined}
                 />
                 <div className="card__name">{record.name}</div>
+                {item.kind === 'filesystem-tool' && item.record.updateAvailable && (
+                  <button
+                    className="card__update-badge"
+                    title="A newer version is listed on EDCodex -- click to view (and clear this badge)"
+                    onClick={() => void handleToolUpdateBadge(item.record)}
+                  >
+                    Update
+                  </button>
+                )}
               </div>
               {record.description && <div className="card__description">{record.description}</div>}
               <div className="card__categories">
