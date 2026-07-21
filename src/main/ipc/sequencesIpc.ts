@@ -3,7 +3,6 @@ import { IpcChannels } from '@shared/ipcChannels'
 import type { LaunchSequenceRecord, NewLaunchSequenceInput } from '@shared/types'
 import * as repo from '../data/libraryRepository'
 import { writeSequenceScript, deleteSequenceScript } from '../platform/sequenceScriptBuilder'
-import { track } from '../analytics/analytics'
 import { launchPath } from '../platform'
 
 export function registerSequencesIpc(): void {
@@ -29,7 +28,6 @@ export function registerSequencesIpc(): void {
     // Field is named batFilePath for historical reasons; on Linux/macOS it
     // holds the generated .sh path.
     const batFilePath = writeSequenceScript(sequence, tools)
-    track('sequence_script_generated')
     return repo.updateLaunchSequence(id, { batFilePath })
   })
 
@@ -42,7 +40,6 @@ export function registerSequencesIpc(): void {
       sequence = await repo.updateLaunchSequence(id, { batFilePath })
     }
     launchPath(sequence.batFilePath as string)
-    track('sequence_run', { steps: sequence.steps.length })
   })
 
   ipcMain.handle(IpcChannels.sequencesRevealBat, async (_e, id: string) => {

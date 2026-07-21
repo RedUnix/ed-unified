@@ -185,8 +185,6 @@ export interface AppSettings {
   /** Watch the ED journal for "!command arg" local-chat messages. */
   chatCommandsEnabled: boolean
   chatCommands: ChatCommandRecord[]
-  /** Anonymous usage statistics (Aptabase); no URLs, paths, or names are ever sent. */
-  analyticsEnabled: boolean
 }
 
 /** Portable backup bundle produced by Settings > Export. */

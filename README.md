@@ -88,9 +88,7 @@ curl -X POST http://127.0.0.1:8425/show-library
 
 ## Tech Stack
 
-Electron, React, TypeScript, and [lowdb](https://github.com/typicode/lowdb) for local storage -- no backend, no account. All your data (bookmarks, tools, sequences, settings) lives on your machine.
-
-The app sends **anonymous usage statistics** via [Aptabase](https://aptabase.com) (a privacy-first analytics service): app opened/closed, feature usage counts, and crash reports. No URLs, file paths, tool names, or any personal data are ever included, and you can turn it off in Settings ("Share anonymous usage statistics").
+Electron, React, TypeScript, and [lowdb](https://github.com/typicode/lowdb) for local storage -- no backend, no account, no telemetry. All your data (bookmarks, tools, sequences, settings) lives on your machine.
 
 ## License
 

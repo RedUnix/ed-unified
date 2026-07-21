@@ -332,15 +332,6 @@ export default function AppSettingsControl({ settings, onSettingsChange }: AppSe
               )}
             </div>
 
-            <label className="field" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <input
-                type="checkbox"
-                checked={settings?.analyticsEnabled ?? true}
-                onChange={(e) => void patchSettings({ analyticsEnabled: e.target.checked })}
-              />
-              <span>Share anonymous usage statistics (no URLs, paths, or names)</span>
-            </label>
-
             <div className="field">
               <label>Backup</label>
               <div style={{ display: 'flex', gap: 8 }}>
