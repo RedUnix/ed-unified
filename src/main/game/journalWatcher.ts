@@ -2,7 +2,6 @@ import { closeSync, existsSync, openSync, readdirSync, readSync, statSync } from
 import { join } from 'path'
 import { getSettings } from '../data/settingsStore'
 import { findJournalDir } from './edPaths'
-import { track } from '../analytics/analytics'
 import type { WebContentsViewManager } from '../tabs/WebContentsViewManager'
 
 const POLL_INTERVAL_MS = 2000
@@ -55,7 +54,6 @@ function handleJournalLine(line: string, tabsManager: WebContentsViewManager): v
   if (!command) return
 
   const url = command.urlTemplate.replaceAll('{arg}', encodeURIComponent(arg))
-  track('chat_command_used', { command: command.command })
   // Background tab: the user is in-game -- never steal focus from Elite.
   void tabsManager.openEphemeral(url, { background: true })
 }

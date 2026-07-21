@@ -4,7 +4,6 @@ import type { FilesystemToolRecord, NewToolInput } from '@shared/types'
 import * as repo from '../data/libraryRepository'
 import { launchPath } from '../platform'
 import { showLaunchOverlay } from '../bootWindow'
-import { track } from '../analytics/analytics'
 
 export function registerToolsIpc(window: BrowserWindow): void {
   ipcMain.handle(IpcChannels.toolsList, () => repo.listTools())
@@ -43,6 +42,5 @@ export function registerToolsIpc(window: BrowserWindow): void {
     if (!tool?.installedExePath) throw new Error('No installed program path set for this tool.')
     showLaunchOverlay(window, tool.name)
     launchPath(tool.installedExePath)
-    track('tool_launched')
   })
 }

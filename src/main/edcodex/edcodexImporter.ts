@@ -10,7 +10,6 @@ import {
   updateTool
 } from '../data/libraryRepository'
 import { downloadIcon } from '../icons/iconDownloader'
-import { track } from '../analytics/analytics'
 
 export async function importFromEdcodexUrl(
   edcodexUrl: string
@@ -40,7 +39,6 @@ export async function importFromEdcodexUrl(
   const iconLocalPath = parsed.iconUrl ? await downloadIcon(parsed.iconUrl) : undefined
   const description = parsed.shortDescription ?? parsed.longDescriptionText
 
-  track('edcodex_imported', { kind: isNativeApp(parsed) ? 'tool' : 'bookmark', via: 'url' })
   if (isNativeApp(parsed)) {
     const record = await createTool({
       name: parsed.name,

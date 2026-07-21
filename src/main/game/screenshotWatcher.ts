@@ -11,6 +11,10 @@ const SETTLE_DELAY_MS = 1500
 
 let watcher: FSWatcher | null = null
 let settleTimer: NodeJS.Timeout | null = null
+let retryTimer: NodeJS.Timeout | null = null
+
+/** How long to wait before re-attempting a watch after an error (e.g. folder deleted). */
+const RETRY_DELAY_MS = 30_000
 
 export function defaultScreenshotDir(): string {
   return findScreenshotDir()
@@ -23,9 +27,18 @@ export function defaultScreenshotDir(): string {
  */
 export function startScreenshotWatcher(window: BrowserWindow): void {
   if (watcher) return
+  if (retryTimer) {
+    clearTimeout(retryTimer)
+    retryTimer = null
+  }
   const dir = getSettings().screenshotFolderPath ?? defaultScreenshotDir()
   if (!existsSync(dir)) {
-    console.warn(`Screenshot watcher: folder not found, not watching: ${dir}`)
+    // Folder may appear later (game not installed yet, drive mounted later);
+    // keep re-checking cheaply so the feature starts working without a restart.
+    retryTimer = setTimeout(() => {
+      retryTimer = null
+      if (!window.isDestroyed()) startScreenshotWatcher(window)
+    }, RETRY_DELAY_MS)
     return
   }
   watcher = watch(dir, (_eventType, filename) => {
@@ -46,6 +59,17 @@ export function startScreenshotWatcher(window: BrowserWindow): void {
       }
     }, SETTLE_DELAY_MS)
   })
+  // Without a listener, watcher errors (folder deleted/unmounted, EPERM) are
+  // unhandled 'error' events that crash the main process. Tear down and retry
+  // later so the feature recovers once the folder is available again.
+  watcher.on('error', (error) => {
+    console.warn(`Screenshot watcher error on ${dir}; rebinding in ${RETRY_DELAY_MS / 1000}s:`, error.message)
+    stopScreenshotWatcher()
+    retryTimer = setTimeout(() => {
+      retryTimer = null
+      if (!window.isDestroyed()) startScreenshotWatcher(window)
+    }, RETRY_DELAY_MS)
+  })
 }
 
 export function stopScreenshotWatcher(): void {
@@ -53,4 +77,6 @@ export function stopScreenshotWatcher(): void {
   watcher = null
   if (settleTimer) clearTimeout(settleTimer)
   settleTimer = null
+  if (retryTimer) clearTimeout(retryTimer)
+  retryTimer = null
 }

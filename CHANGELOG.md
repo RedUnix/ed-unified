@@ -13,7 +13,6 @@
 - The Launch Sequences and Downloads pages (and the blank new-tab page) now show your library background image too.
 - **Local webhook API** (Settings, off by default): a localhost-only HTTP server (default port 8425) lets VoiceAttack or scripts drive the app -- `GET /status`, `POST /open-bookmark`, `/open-url`, `/run-sequence`, `/refresh-tab`, `/show-library` (bookmarks and sequences match by id or name). See the README for examples.
 
-- **Anonymous usage analytics** via [Aptabase](https://aptabase.com): unique users, session time, crash reports, and feature-usage counts (no URLs, file paths, or names -- ever). Opt out any time in Settings via "Share anonymous usage statistics".
 - **Linux feature parity**: launch sequences now generate executable `.sh` scripts on Linux (`nohup` for tools, `xdg-open` for Steam/Epic URLs, `sleep` for delays) instead of being Windows-only; `window.prompt()` in embedded sites uses zenity/kdialog; auto-close-on-game-exit works with Proton (detects `EliteDangerous64.exe` through Wine's cmdline and matches native tool paths via /proc); and the journal/screenshot watchers look inside the game's Proton prefix (`steamapps/compatdata/359320`) as well as the native locations.
 
 ### Fixed

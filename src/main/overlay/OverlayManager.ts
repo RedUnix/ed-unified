@@ -26,10 +26,11 @@ export class OverlayManager {
     private readonly onEvent: (event: TabEvent) => void
   ) {}
 
-  pin(tabId: string, title: string): void {
-    if (this.overlays.has(tabId)) return
+  /** Returns false when the tab has no native view to adopt (e.g. a never-navigated URL-bar tab). */
+  pin(tabId: string, title: string): boolean {
+    if (this.overlays.has(tabId)) return true
     const view = this.tabsManager.takeViewForOverlay(tabId)
-    if (!view) return
+    if (!view) return false
 
     const window = new BrowserWindow({
       width: 520,
@@ -80,6 +81,7 @@ export class OverlayManager {
     window.contentView.addChildView(view)
     this.overlays.set(tabId, { window, view })
     this.onEvent({ type: 'overlay-changed', tabId, pinned: true })
+    return true
   }
 
   unpin(tabId: string): void {

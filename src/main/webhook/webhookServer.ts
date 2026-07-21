@@ -2,7 +2,6 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { app, type BrowserWindow } from 'electron'
 import { IpcChannels } from '@shared/ipcChannels'
 import { listBookmarks, listLaunchSequences } from '../data/libraryRepository'
-import { track } from '../analytics/analytics'
 
 /**
  * Command forwarded to the renderer, which owns tab/section state. The
@@ -52,7 +51,6 @@ async function handleRequest(
   const url = new URL(req.url ?? '/', 'http://localhost')
   const send = (command: WebhookCommand): void => {
     if (!window.isDestroyed()) window.webContents.send(IpcChannels.webhookCommand, command)
-    track('webhook_command', { type: command.type })
   }
 
   if (req.method === 'GET' && url.pathname === '/status') {

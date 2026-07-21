@@ -83,7 +83,7 @@ const api = {
     stopFindInPage: (tabId: string): Promise<void> =>
       ipcRenderer.invoke(IpcChannels.tabsStopFindInPage, tabId),
     reload: (tabId: string): Promise<void> => ipcRenderer.invoke(IpcChannels.tabsReload, tabId),
-    pinToOverlay: (tabId: string, title: string): Promise<void> =>
+    pinToOverlay: (tabId: string, title: string): Promise<boolean> =>
       ipcRenderer.invoke(IpcChannels.tabsPinToOverlay, tabId, title),
     unpinFromOverlay: (tabId: string): Promise<void> =>
       ipcRenderer.invoke(IpcChannels.tabsUnpinFromOverlay, tabId)

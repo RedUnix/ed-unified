@@ -18,6 +18,7 @@ interface TabStripProps {
   onClose: (id: string) => void
   onNewTab: () => void
   onPinActiveTab: () => void
+  canPinActiveTab: boolean
   onGoBack: () => void
   onGoForward: () => void
   onToggleThemePanel: () => void
@@ -34,6 +35,7 @@ export default function TabStrip({
   onClose,
   onNewTab,
   onPinActiveTab,
+  canPinActiveTab,
   onGoBack,
   onGoForward,
   onToggleThemePanel
@@ -100,7 +102,12 @@ export default function TabStrip({
           <button
             className="tab-nav-controls__btn tab-strip__theme-toggle"
             onClick={onPinActiveTab}
-            title="Pin as game overlay (always on top)"
+            disabled={!canPinActiveTab}
+            title={
+              canPinActiveTab
+                ? 'Pin as game overlay (always on top)'
+                : 'Navigate somewhere first to pin this tab'
+            }
           >
             <ThumbtackIcon />
           </button>

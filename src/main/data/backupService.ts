@@ -3,7 +3,6 @@ import { dialog, type BrowserWindow } from 'electron'
 import type { AppSettings, BackupBundle, ImportSummary, LibraryDb } from '@shared/types'
 import { getDb } from './db'
 import { getSettings, updateSettings } from './settingsStore'
-import { track } from '../analytics/analytics'
 
 const BUNDLE_VERSION = 1
 
@@ -27,7 +26,6 @@ export async function exportBackup(window: BrowserWindow): Promise<string | null
     settings: portableSettings
   }
   writeFileSync(result.filePath, JSON.stringify(bundle, null, 2), 'utf-8')
-  track('backup_exported')
   return result.filePath
 }
 
@@ -84,7 +82,6 @@ export async function importBackup(window: BrowserWindow): Promise<ImportSummary
     settings = updateSettings(incoming)
   }
 
-  track('backup_imported')
   return {
     bookmarks: library.bookmarks.length,
     tools: library.tools.length,

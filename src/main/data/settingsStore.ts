@@ -15,8 +15,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   chatCommands: [
     { command: 'inara', urlTemplate: 'https://inara.cz/elite/starsystem/?search={arg}' },
     { command: 'edsm', urlTemplate: 'https://www.edsm.net/en/system?systemName={arg}' }
-  ],
-  analyticsEnabled: true
+  ]
 }
 
 function settingsPath(): string {
